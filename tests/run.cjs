@@ -226,6 +226,16 @@ async function playsOk(page) {
     {
       const { page, context } = await newPage(browser, origin, { width: 1280, height: 800 }, false);
       await page.goto(origin + "/", { waitUntil: "load" });
+      const html = await page.locator("#project-grid").innerText();
+      check(!/vertical|9:16|landscape|16:9/i.test(html), "cards no longer show the format sub-heading");
+      check((await page.locator(".project-subtitle").count()) === 0, "no sub-heading line under card titles");
+      await page.locator(".project-card").first().click();
+      check(!/vertical|9:16|landscape|16:9/i.test(await page.locator(".dialog-info").innerText()), "player no longer shows the format either");
+      await context.close();
+    }
+    {
+      const { page, context } = await newPage(browser, origin, { width: 1280, height: 800 }, false);
+      await page.goto(origin + "/", { waitUntil: "load" });
       const rows = await page.locator("#contact-rows a.contact-row").evaluateAll((a) => a.map((n) => ({ href: n.href, target: n.target, rel: n.rel, text: n.innerText.replace(/\s+/g, " ") })));
       check(rows.length === 2, "contact lists Instagram and LinkedIn", rows.map((r) => r.text).join(" | "));
       check(rows.some((r) => r.href === "https://www.instagram.com/kenny_editzvideos/") && rows.some((r) => r.href === "https://www.linkedin.com/in/kenisha-khatri-76055b388"), "contact links point at the right profiles");

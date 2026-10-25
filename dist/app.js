@@ -286,10 +286,6 @@
     return { raw: project, media: resolveMedia(project.video, project.posterTime), index: index };
   });
 
-  function formatLabel(project) {
-    return project.orientation === "portrait" ? "Vertical · 9:16" : "Landscape · 16:9";
-  }
-
   function makeArtwork(entry) {
     var project = entry.raw;
     var art = el("div", "project-art art art-0" + ((entry.index % 6) + 1));
@@ -326,7 +322,6 @@
     var info = el("span", "project-info");
     var left = el("span", "");
     left.appendChild(el("span", "project-title", project.title || "Untitled"));
-    left.appendChild(el("span", "project-subtitle", [project.category, project.language, formatLabel(project)].filter(Boolean).join(" / ")));
     info.appendChild(left);
     info.appendChild(el("span", "project-index", pad(entry.index + 1)));
     button.appendChild(info);
@@ -345,7 +340,7 @@
     button.addEventListener("click", function () {
       openPlayer({
         title: project.title, category: (project.category || "").toUpperCase(),
-        meta: [project.language, project.role, formatLabel(project), project.year].filter(Boolean).join(" / "),
+        meta: [project.language, project.role, project.year].filter(Boolean).join(" / "),
         description: clean(project.note), media: entry.media, orientation: project.orientation, project: project
       }, button);
     });
