@@ -223,6 +223,19 @@ async function playsOk(page) {
     const mapped = Object.fromEntries(shipped.projects.map((p) => [p.title, p.video]));
     check(Object.entries(expected).every(([t, id]) => mapped[t] === "mux:" + id), "each title maps to the right Mux playback ID");
     check(shipped.projects.every((p) => p.orientation === "portrait"), "all five films are marked vertical (9:16)");
+    {
+      const { page, context } = await newPage(browser, origin, { width: 1280, height: 800 }, false);
+      await page.goto(origin + "/", { waitUntil: "load" });
+      const rows = await page.locator("#contact-rows a.contact-row").evaluateAll((a) => a.map((n) => ({ href: n.href, target: n.target, rel: n.rel, text: n.innerText.replace(/\s+/g, " ") })));
+      check(rows.length === 2, "contact lists Instagram and LinkedIn", rows.map((r) => r.text).join(" | "));
+      check(rows.some((r) => r.href === "https://www.instagram.com/kenny_editzvideos/") && rows.some((r) => r.href === "https://www.linkedin.com/in/kenisha-khatri-76055b388"), "contact links point at the right profiles");
+      check(rows.every((r) => r.target === "_blank" && /noopener/.test(r.rel)), "external links open safely in a new tab");
+      check((await page.locator("#footer-social a").count()) === 2, "footer repeats the social links");
+      check(/message on Instagram or LinkedIn/.test(await page.locator("#contact-note").innerText()), "contact note points at the socials");
+      check(await page.locator('script[type="application/ld+json"]').count() === 1, "structured data (Person) is present");
+      await page.locator("#contact").screenshot({ path: path.join(SHOTS, "contact-desktop.png") });
+      await context.close();
+    }
     check(shipped.showreel.video === "mux:wnpW9Y401OHnb01qivJzdOsf89hyxspouUO5obbbzxWBM", "intro video is wired to its Mux playback ID");
     {
       const { page, context } = await newPage(browser, origin, { width: 1280, height: 800 }, false);
