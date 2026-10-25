@@ -460,27 +460,39 @@
 
   function setupContact() {
     var rows = document.getElementById("contact-rows");
+    var footerSocial = document.getElementById("footer-social");
     var email = clean(data.email);
+    // Each row is one big tappable link: LABEL ........ value ↗
     function row(label, text, href, external) {
-      var line = el("div", "contact-row");
-      line.appendChild(el("span", "", label));
-      var link = el("a", "contact-value", text);
-      link.href = href;
-      if (external) { link.target = "_blank"; link.rel = "noopener noreferrer"; }
-      line.appendChild(link);
+      var line = el("a", "contact-row");
+      line.href = href;
+      if (external) { line.target = "_blank"; line.rel = "noopener noreferrer"; }
+      line.setAttribute("aria-label", label + ": " + text + (external ? " (opens in a new tab)" : ""));
+      line.appendChild(el("span", "contact-label", label));
+      line.appendChild(el("span", "contact-value", text));
       rows.appendChild(line);
     }
+    var names = [];
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       row("EMAIL", email, "mailto:" + email, false);
       document.getElementById("header-contact").href = "mailto:" + email;
     }
     (Array.isArray(data.socials) ? data.socials : []).forEach(function (social) {
       var url = allowedUrl(social && social.url);
-      if (url && clean(social.label)) row(social.label.toUpperCase(), social.handle || social.label, url, true);
+      var label = clean(social && social.label);
+      if (!url || !label) return;
+      row(label.toUpperCase(), clean(social.handle) || label, url, true);
+      names.push(label);
+      var link = el("a", "", label);
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      footerSocial.appendChild(link);
     });
-    if (!rows.children.length) {
-      document.getElementById("contact-note").textContent = "Contact details are coming soon.";
-    }
+    footerSocial.hidden = !footerSocial.children.length;
+    var note = document.getElementById("contact-note");
+    if (!rows.children.length) note.textContent = "Contact details are coming soon.";
+    else if (!email && names.length) note.textContent = "For projects and collaborations, message on " + names.join(" or ") + ".";
   }
 
   /* ── dialog behaviour ─────────────────────────────────────────────── */

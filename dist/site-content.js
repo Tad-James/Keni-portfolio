@@ -28,8 +28,11 @@ window.KENISHA_PORTFOLIO = {
   intro: "Podcast edits in Hindi, English and Tamil, a Breaking Bad intro remake, and a multilingual voice-agent product demo.",
   location: "",
   email: "",
-  /* e.g. { label: "Instagram", url: "https://instagram.com/…" } */
-  socials: [],
+  /* Shown in Contact and the footer. `handle` is the text displayed. */
+  socials: [
+    { label: "Instagram", handle: "@kenny_editzvideos", url: "https://www.instagram.com/kenny_editzvideos/" },
+    { label: "LinkedIn",  handle: "kenisha-khatri",     url: "https://www.linkedin.com/in/kenisha-khatri-76055b388" }
+  ],
 
   about: {
     bio: "Video editor cutting podcasts, remakes and product films across Hindi, English and Tamil.",
