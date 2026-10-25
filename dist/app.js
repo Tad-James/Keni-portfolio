@@ -205,6 +205,10 @@
     spinner.setAttribute("role", "status");
     spinner.setAttribute("aria-label", "Loading video");
     function busy(on) { spinner.hidden = !on; }
+    // Trust the video's real shape over the configured orientation (fixes layout for any upload).
+    video.addEventListener("loadedmetadata", function () {
+      if (video.videoWidth && video.videoHeight) dialogMedia.classList.toggle("is-portrait", video.videoHeight > video.videoWidth * 1.05);
+    });
     video.addEventListener("waiting", function () { busy(true); });
     video.addEventListener("playing", function () { busy(false); });
     video.addEventListener("canplay", function () { busy(false); });

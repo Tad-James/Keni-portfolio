@@ -29,9 +29,15 @@ function check(ok, label, extra) {
 }
 
 function makeFixtures() {
-  if (fs.existsSync(path.join(FX, "master.m3u8"))) return;
   fs.mkdirSync(FX, { recursive: true });
   const run = (args) => execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", ...args], { cwd: FX });
+  if (!fs.existsSync(path.join(FX, "pmaster.m3u8"))) {
+    // a genuinely vertical 9:16 stream, like the real films
+    run(["-f", "lavfi", "-i", "testsrc2=size=360x640:rate=30", "-f", "lavfi", "-i", "sine=frequency=550:sample_rate=48000", "-t", "6",
+      "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-g", "60", "-c:a", "aac", "-var_stream_map", "v:0,a:0",
+      "-f", "hls", "-hls_time", "2", "-hls_playlist_type", "vod", "-master_pl_name", "pmaster.m3u8", "-hls_segment_filename", "p%v_%03d.ts", "p%v.m3u8"]);
+  }
+  if (fs.existsSync(path.join(FX, "master.m3u8"))) return;
   run(["-f", "lavfi", "-i", "testsrc2=size=1280x720:rate=30", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "8",
     "-filter_complex", "[0:v]split=2[a][b];[b]scale=640:360[bs]", "-map", "[a]", "-map", "1:a", "-map", "[bs]", "-map", "1:a",
     "-c:v", "libx264", "-preset", "veryfast", "-g", "60", "-keyint_min", "60", "-sc_threshold", "0", "-c:a", "aac",
@@ -108,7 +114,8 @@ async function newPage(browser, origin, viewport, mock) {
   {
     await page.route("https://stream.mux.com/**", (route) => {
       const name = new URL(route.request().url()).pathname.split("/").pop();
-      const file = path.join(FX, /^v\d+(_\d+)?\.(m3u8|ts)$/.test(name) ? name : "master.m3u8");
+      const isSegment = /^[vp]\d+(_\d+)?\.(m3u8|ts)$/.test(name);
+      const file = path.join(FX, isSegment ? name : name === MUX_ID + ".m3u8" ? "master.m3u8" : "pmaster.m3u8");
       const headers = { "access-control-allow-origin": "*" };
       if (!fs.existsSync(file)) return route.fulfill({ status: 404, headers, body: "" });
       return route.fulfill({ headers, contentType: MIME[path.extname(file)], body: fs.readFileSync(file) });
@@ -177,7 +184,7 @@ async function playsOk(page) {
   const { server, origin } = await serve();
   const browser = await chromium.launch({ args: ["--autoplay-policy=no-user-gesture-required"] });
 
-  console.log("\n▸ Layout at every viewport — shipped content (real Mux IDs; intro still pending)");
+  console.log("\n▸ Layout at every viewport — shipped content (real Mux IDs)");
   for (const vp of VIEWPORTS) {
     const { page, context, problems } = await newPage(browser, origin, vp, false);
     await page.goto(origin + "/", { waitUntil: "load" });
@@ -216,6 +223,16 @@ async function playsOk(page) {
     const mapped = Object.fromEntries(shipped.projects.map((p) => [p.title, p.video]));
     check(Object.entries(expected).every(([t, id]) => mapped[t] === "mux:" + id), "each title maps to the right Mux playback ID");
     check(shipped.projects.every((p) => p.orientation === "portrait"), "all five films are marked vertical (9:16)");
+    check(shipped.showreel.video === "mux:wnpW9Y401OHnb01qivJzdOsf89hyxspouUO5obbbzxWBM", "intro video is wired to its Mux playback ID");
+    {
+      const { page, context } = await newPage(browser, origin, { width: 1280, height: 800 }, false);
+      await page.goto(origin + "/", { waitUntil: "load" });
+      check(await page.waitForSelector(".hero-reel.has-poster", { timeout: 8000 }).then(() => true, () => false), "hero shows the intro's poster");
+      check(!/COMING SOON/.test(await page.locator("#reel-prompt-sub").innerText()), "hero no longer says 'coming soon'");
+      await page.locator("#hero-reel").click();
+      check(await playsOk(page), "hero intro plays");
+      await context.close();
+    }
 
     for (const [name, width, height, cols] of [["desktop", 1440, 900, 5], ["tablet", 768, 1024, 3], ["phone", 390, 844, 2]]) {
       const { page, context } = await newPage(browser, origin, { width, height }, false);
@@ -276,6 +293,7 @@ async function playsOk(page) {
     await page.locator(".project-card").first().click();
     check(await page.locator("#media-dialog[open]").count() === 1, "click opens the player dialog");
     check(await playsOk(page), "Cloudflare-ID video plays (HLS)", `${Date.now() - t0}ms to first playing frame`);
+    check(await page.evaluate(() => !document.getElementById("dialog-media").classList.contains("is-portrait")), "player follows the real video shape (config said portrait, clip is landscape)");
     const levels = await page.evaluate(() => { const v = document.querySelector("#dialog-media video"); return { src: v.currentSrc || v.src, poster: v.poster }; });
     check(/blob:/.test(levels.src), "served through hls.js/MSE (blob source)", levels.src.slice(0, 40));
     check(/thumbnails\/thumbnail\.jpg/.test(levels.poster), "poster comes from Stream thumbnail endpoint");
