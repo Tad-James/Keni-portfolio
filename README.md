@@ -3,7 +3,27 @@
 Static site (no build step) hosted on Vercel. Heavy video files are **not** stored
 here — they stream from a video host, so pages stay light and playback starts fast.
 
-## Add a video (≈ 2 minutes each)
+## Free options (no card needed)
+
+| Option | Cost | Best for | Paste into `video` |
+|---|---|---|---|
+| **YouTube (Unlisted)** | Free, unlimited length | The simplest path; long podcasts | `https://youtu.be/XXXXXXXXXXX` |
+| **Mux free plan** | Free: 10 videos, 100k delivery min/month | Cleanest look (no YouTube branding) | `mux:PLAYBACK_ID` |
+| Cloudflare Stream | ~$5/month | Most hands-off, no limits that matter | 32-character video ID |
+
+**YouTube:** studio.youtube.com → Create → Upload videos → on *Visibility* choose
+**Unlisted** → Publish → copy the share link. Unlisted videos are hidden from search
+but play on your site. Keep **Allow embedding** on (default). Note: YouTube may
+restrict or claim videos that use copyrighted material (e.g. the Breaking Bad remake).
+
+**Mux:** mux.com → free account → Video → **Assets → Add video asset** → upload →
+copy the **Playback ID** (policy must be *Public*) → `video: "mux:PLAYBACK_ID"`.
+Check Mux's plan page for any per-video length cap if your podcasts are long.
+
+Each site card shows a poster and only loads the embed/stream when opened, so the
+page stays fast; hovering a card pre-connects to the host.
+
+## Add a video with Cloudflare Stream (≈ 2 minutes each)
 
 1. Sign in to Cloudflare → **Stream → Videos → Upload** and drag the file in.
    Cloudflare converts it to adaptive-quality streaming on its global CDN

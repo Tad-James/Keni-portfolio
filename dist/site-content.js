@@ -8,8 +8,12 @@
  *    3. Set `cloudflareCustomerCode` ONCE (see below). Done — no re-encoding,
  *       no thumbnails to make: adaptive streaming + posters are automatic.
  *
+ *  FREE OPTIONS (paste into `video`):
+ *    YouTube (unlimited, free):  "https://youtu.be/XXXXXXXXXXX"   (set the video to Unlisted)
+ *    Mux (free plan, 10 videos):  "mux:PLAYBACK_ID"
+ *
  *  `video` also accepts: a full .m3u8 (HLS) URL, an .mp4 / .webm URL,
- *  or a YouTube / Vimeo link. Leave it "" and the card shows "Coming soon".
+ *  or a Vimeo link. Leave it "" and the card shows "Coming soon".
  * ─────────────────────────────────────────────────────────────────────────
  */
 window.KENISHA_PORTFOLIO = {

@@ -16,7 +16,10 @@ const DIST = path.join(__dirname, "..", "dist");
 const FX = path.join(__dirname, ".fixtures");
 const SHOTS = path.join(__dirname, "screens");
 const CF_HOST = "https://customer-test.cloudflarestream.com";
+const MUX_ID = "MuxPlaybackId0123456789abcdef";
+const YT_ID = "abcDEF12345";
 const IDS = { reel: "a".repeat(32), p1: "b".repeat(32), broken: "c".repeat(32) };
+const SECURITY = Object.fromEntries(((JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8")).headers || [])[0] || { headers: [] }).headers.map((h) => [h.key.toLowerCase(), h.value]));
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".m3u8": "application/vnd.apple.mpegurl", ".ts": "video/mp2t", ".mp4": "video/mp4", ".txt": "text/plain" };
 
 let failures = 0;
@@ -55,10 +58,10 @@ function serve() {
       const range = /bytes=(\d*)-(\d*)/.exec(req.headers.range || "");
       if (range) {
         const start = range[1] ? +range[1] : 0, end = range[2] ? +range[2] : stat.size - 1;
-        res.writeHead(206, { "content-type": type, "accept-ranges": "bytes", "content-range": `bytes ${start}-${end}/${stat.size}`, "content-length": end - start + 1 });
+        res.writeHead(206, { ...SECURITY, "content-type": type, "accept-ranges": "bytes", "content-range": `bytes ${start}-${end}/${stat.size}`, "content-length": end - start + 1 });
         fs.createReadStream(full, { start, end }).pipe(res);
       } else {
-        res.writeHead(200, { "content-type": type, "content-length": stat.size, "accept-ranges": "bytes" });
+        res.writeHead(200, { ...SECURITY, "content-type": type, "content-length": stat.size, "accept-ranges": "bytes" });
         fs.createReadStream(full).pipe(res);
       }
     });
@@ -86,6 +89,8 @@ function mockContent(origin) {
   data.projects[2].video = origin + "/__fx/clip.mp4";
   data.projects[3].video = "";
   data.projects[4].video = IDS.broken;
+  data.projects.push({ id: "06", title: "Mux test", category: "Test", language: "", orientation: "landscape", video: "mux:" + MUX_ID, note: "" });
+  data.projects.push({ id: "07", title: "YouTube test", category: "Test", language: "", orientation: "landscape", video: "https://youtu.be/" + YT_ID, note: "" });
   return "window.KENISHA_PORTFOLIO = " + JSON.stringify(data) + ";";
 }
 
@@ -99,6 +104,15 @@ async function newPage(browser, origin, viewport, mock) {
   if (mock) {
     const content = mockContent(origin);
     await page.route("**/site-content.js", (route) => route.fulfill({ contentType: "text/javascript", body: content }));
+    await page.route("https://stream.mux.com/**", (route) => {
+      const name = new URL(route.request().url()).pathname.split("/").pop();
+      const file = path.join(FX, name === MUX_ID + ".m3u8" ? "master.m3u8" : name);
+      const headers = { "access-control-allow-origin": "*" };
+      if (!fs.existsSync(file)) return route.fulfill({ status: 404, headers, body: "" });
+      return route.fulfill({ headers, contentType: MIME[path.extname(file)], body: fs.readFileSync(file) });
+    });
+    await page.route(/https:\/\/(image\.mux\.com|i\.ytimg\.com)\/.*/, (route) => route.fulfill({ headers: { "access-control-allow-origin": "*" }, contentType: "image/jpeg", body: fs.readFileSync(path.join(FX, "thumb.jpg")) }));
+    await page.route("https://www.youtube-nocookie.com/**", (route) => route.fulfill({ contentType: "text/html", body: "<!doctype html><title>yt stub</title><p>stub player</p>" }));
     await page.route(CF_HOST + "/**", async (route) => {
       const url = new URL(route.request().url());
       const headers = { "access-control-allow-origin": "*" };
@@ -190,8 +204,8 @@ async function playsOk(page) {
     const { page, context, problems } = await newPage(browser, origin, { width: 1280, height: 800 }, true);
     await page.goto(origin + "/", { waitUntil: "load" });
 
-    check(await page.locator(".project-card").count() === 5, "5 project cards render");
-    check(await page.locator(".filter-chip").count() === 4, "filter chips built from categories (All + 3)");
+    check(await page.locator(".project-card").count() === 7, "7 project cards render");
+    check(await page.locator(".filter-chip").count() === 5, "filter chips built from categories (All + 4)");
     check((await page.locator("#header-contact").getAttribute("href")) === "mailto:hello@example.com", "header CTA uses mailto when email set");
     check((await page.locator(".contact-value").count()) === 2, "contact shows email + Instagram");
 
@@ -235,6 +249,23 @@ async function playsOk(page) {
     check(await page.locator(".player-status .player-retry").waitFor({ timeout: 20000 }).then(() => true, () => false), "failed stream shows an error with 'Try again'");
     await page.keyboard.press("Escape");
 
+    // 5b) Mux playback id (free plan) → adaptive HLS
+    check(/image\.mux\.com\/MuxPlaybackId0123456789abcdef\/thumbnail\.jpg/.test(await page.locator(".project-card").nth(5).locator("img").getAttribute("src")), "Mux card poster comes from image.mux.com");
+    await page.locator(".project-card").nth(5).click();
+    check(await playsOk(page), "Mux playback id plays (HLS)");
+    await page.keyboard.press("Escape");
+
+    // 5c) YouTube (free) → click-to-load embed, poster from ytimg, referrer policy set
+    check(/i\.ytimg\.com\/vi\/abcDEF12345\/hqdefault\.jpg/.test(await page.locator(".project-card").nth(6).locator("img").getAttribute("src")), "YouTube card poster comes from ytimg");
+    check(await page.locator("iframe").count() === 0, "no YouTube iframe loads until a film is opened");
+    await page.locator(".project-card").nth(6).hover();
+    check(await page.locator('link[rel=preconnect][href="https://www.youtube-nocookie.com"]').count() === 1, "hover pre-connects to YouTube");
+    await page.locator(".project-card").nth(6).click();
+    const yt = await page.locator("#dialog-media iframe").evaluate((f) => ({ src: f.src, ref: f.referrerPolicy }));
+    check(/^https:\/\/www\.youtube-nocookie\.com\/embed\/abcDEF12345\?.*autoplay=1/.test(yt.src), "YouTube opens the privacy-enhanced embed with autoplay", yt.src);
+    check(yt.ref === "strict-origin-when-cross-origin", "iframe sends a referrer (avoids YouTube error 153)");
+    await page.keyboard.press("Escape");
+
     // 6) hero intro button
     await page.locator("#hero-reel").click();
     check(await playsOk(page), "hero intro (Cloudflare ID) plays");
@@ -245,7 +276,7 @@ async function playsOk(page) {
     check(await page.locator(".project-card").count() === 3, "Podcast filter shows 3 films");
     check((await page.locator("#project-count").innerText()) === "03", "film counter updates");
     await page.locator('.filter-chip[data-filter="All"]').click();
-    check(await page.locator(".project-card").count() === 5, "All filter restores 5");
+    check(await page.locator(".project-card").count() === 7, "All filter restores 7");
     check(problems.filter((p) => !/cccccc/.test(p)).length === 0, "no unexpected console errors", problems.join(" | "));
     await context.close();
   }

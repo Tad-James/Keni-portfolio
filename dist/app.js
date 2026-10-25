@@ -56,6 +56,18 @@
       };
     }
 
+    // Mux (free plan available): "mux:PLAYBACK_ID" or a stream.mux.com/….m3u8 link
+    var mux = /^mux:([A-Za-z0-9]{10,})$/.exec(raw) || /^https:\/\/stream\.mux\.com\/([A-Za-z0-9]{10,})(?:\.m3u8)?(?:\?.*)?$/.exec(raw);
+    if (mux) {
+      var seconds = parseInt(posterTime, 10) || 2;
+      return {
+        kind: "hls",
+        src: "https://stream.mux.com/" + mux[1] + ".m3u8",
+        origin: "https://stream.mux.com",
+        poster: function (height) { return "https://image.mux.com/" + mux[1] + "/thumbnail.jpg?time=" + seconds + "&height=" + height; }
+      };
+    }
+
     var safe = allowedUrl(raw);
     if (!safe) return null;
     var parsed = new URL(safe);
@@ -70,6 +82,7 @@
     if (id && /^[\w-]{6,20}$/.test(id)) {
       return {
         kind: "iframe",
+        origin: "https://www.youtube-nocookie.com",
         src: "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0&playsinline=1",
         poster: function () { return "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg"; }
       };
@@ -78,7 +91,7 @@
       var vid = (parsed.pathname.match(/(\d{6,})/) || [])[1];
       if (vid) {
         var hash = parsed.searchParams.get("h") || (parsed.pathname.match(/\/\d+\/([a-f0-9]+)/) || [])[1];
-        return { kind: "iframe", src: "https://player.vimeo.com/video/" + vid + "?autoplay=1&playsinline=1" + (hash ? "&h=" + hash : ""), poster: function () { return ""; } };
+        return { kind: "iframe", origin: "https://player.vimeo.com", src: "https://player.vimeo.com/video/" + vid + "?autoplay=1&playsinline=1" + (hash ? "&h=" + hash : ""), poster: function () { return ""; } };
       }
     }
     if (/\.m3u8$/i.test(parsed.pathname)) return { kind: "hls", src: safe, origin: parsed.origin, poster: function () { return ""; } };
@@ -117,7 +130,7 @@
   /* Warm the connection + engine when a viewer shows intent, so click → first frame is fast. */
   var warmed = {};
   function warm(media) {
-    if (!media || media.kind === "iframe" || warmed[media.src]) return;
+    if (!media || warmed[media.src]) return;
     var conn = navigator.connection;
     if (conn && conn.saveData) return;
     warmed[media.src] = true;
@@ -129,6 +142,7 @@
       link.crossOrigin = "anonymous";
       document.head.appendChild(link);
     }
+    if (media.kind === "iframe") return; // embeds only need the connection warmed
     if (media.kind === "hls") {
       if (!preferNative()) loadHls().catch(function () {});
       try { fetch(media.src, { mode: "cors", credentials: "omit" }).catch(function () {}); } catch (error) {}
