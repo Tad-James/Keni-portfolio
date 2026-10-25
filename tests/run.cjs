@@ -104,9 +104,11 @@ async function newPage(browser, origin, viewport, mock) {
   if (mock) {
     const content = mockContent(origin);
     await page.route("**/site-content.js", (route) => route.fulfill({ contentType: "text/javascript", body: content }));
+  }
+  {
     await page.route("https://stream.mux.com/**", (route) => {
       const name = new URL(route.request().url()).pathname.split("/").pop();
-      const file = path.join(FX, name === MUX_ID + ".m3u8" ? "master.m3u8" : name);
+      const file = path.join(FX, /^v\d+(_\d+)?\.(m3u8|ts)$/.test(name) ? name : "master.m3u8");
       const headers = { "access-control-allow-origin": "*" };
       if (!fs.existsSync(file)) return route.fulfill({ status: 404, headers, body: "" });
       return route.fulfill({ headers, contentType: MIME[path.extname(file)], body: fs.readFileSync(file) });
@@ -175,7 +177,7 @@ async function playsOk(page) {
   const { server, origin } = await serve();
   const browser = await chromium.launch({ args: ["--autoplay-policy=no-user-gesture-required"] });
 
-  console.log("\n▸ Layout at every viewport — shipped content (videos not uploaded yet)");
+  console.log("\n▸ Layout at every viewport — shipped content (real Mux IDs; intro still pending)");
   for (const vp of VIEWPORTS) {
     const { page, context, problems } = await newPage(browser, origin, vp, false);
     await page.goto(origin + "/", { waitUntil: "load" });
@@ -197,6 +199,61 @@ async function playsOk(page) {
     check(problems.length === 0, `${vp.name}: no console/network errors`, problems.join(" | "));
     await page.screenshot({ path: path.join(SHOTS, `mock-${vp.name}.png`), fullPage: true });
     await context.close();
+  }
+
+  console.log("\n▸ Shipped content — real Mux IDs, vertical wall");
+  {
+    const sandbox = { window: {} };
+    require("vm").runInNewContext(fs.readFileSync(path.join(DIST, "site-content.js"), "utf8"), sandbox);
+    const shipped = sandbox.window.KENISHA_PORTFOLIO;
+    const expected = {
+      "Podcast Edit — Hindi": "v7Ovrcx9G1tObKLcoSgpwSpnKpQDffOrrgAm6Xm01TcA",
+      "Podcast Edit — English": "AHBS2k7pXjCrRjfmoGh3siio45fXI00qoo5OSUtK4D8g",
+      "Podcast Edit — Tamil": "P400014GnSe3gS5ddHlzrMA014vhdq02kirasQZ402tJzqAw",
+      "Breaking Bad — Intro Remake": "68jPTtna0202btjf01EHTM5WJEXPa5sOAjPhcp00w527oeQ",
+      "Multilingual Voice Agent — Product Demo": "3GS3G02yUyp8i01MX2mEa02UXbKZEqOv4rFGbzVTNGAcys"
+    };
+    const mapped = Object.fromEntries(shipped.projects.map((p) => [p.title, p.video]));
+    check(Object.entries(expected).every(([t, id]) => mapped[t] === "mux:" + id), "each title maps to the right Mux playback ID");
+    check(shipped.projects.every((p) => p.orientation === "portrait"), "all five films are marked vertical (9:16)");
+
+    for (const [name, width, height, cols] of [["desktop", 1440, 900, 5], ["tablet", 768, 1024, 3], ["phone", 390, 844, 2]]) {
+      const { page, context } = await newPage(browser, origin, { width, height }, false);
+      await page.goto(origin + "/", { waitUntil: "load" });
+      await page.locator(".project-card img").first().waitFor();
+      const geo = await page.evaluate(() => {
+        const g = document.getElementById("project-grid");
+        const cards = Array.from(g.querySelectorAll(".project-card"));
+        const tops = cards.map((c) => Math.round(c.getBoundingClientRect().top));
+        const art = g.querySelector(".project-art").getBoundingClientRect();
+        return { wall: g.classList.contains("is-portrait-wall"), firstRow: tops.filter((t) => t === tops[0]).length, ratio: art.width / art.height };
+      });
+      check(geo.wall, `${name}: vertical films use the reels wall`);
+      check(geo.firstRow === cols, `${name}: ${cols} cards per row`, `got ${geo.firstRow}`);
+      check(Math.abs(geo.ratio - 9 / 16) < 0.02, `${name}: cards are 9:16`, geo.ratio.toFixed(3));
+      await page.screenshot({ path: path.join(SHOTS, `wall-${name}.png`), fullPage: true });
+      await context.close();
+    }
+
+    // real shipped IDs resolve to a working HLS stream, in the portrait player, on a phone and a landscape phone
+    for (const [name, vp] of [["phone", { width: 390, height: 844 }], ["landscape-phone", { width: 740, height: 360 }]]) {
+      const { page, context, problems } = await newPage(browser, origin, vp, false);
+      await page.goto(origin + "/", { waitUntil: "load" });
+      await page.locator(".project-card").first().scrollIntoViewIfNeeded();
+      await page.locator(".project-card").first().tap();
+      check(await playsOk(page), `${name}: real Mux ID plays in the portrait player`);
+      const fit = await page.evaluate(() => {
+        const m = document.getElementById("dialog-media").getBoundingClientRect();
+        const d = document.getElementById("media-dialog").getBoundingClientRect();
+        return { mw: m.width, mh: m.height, ratio: m.width / m.height, vh: innerHeight, vw: innerWidth, dTop: d.top, dBottom: d.bottom };
+      });
+      check(Math.abs(fit.ratio - 9 / 16) < 0.03, `${name}: player keeps 9:16`, fit.ratio.toFixed(3));
+      check(fit.mw <= fit.vw && fit.mh <= fit.vh, `${name}: player fits the screen`, `${Math.round(fit.mw)}x${Math.round(fit.mh)} in ${fit.vw}x${fit.vh}`);
+      check(fit.dTop >= 0 && fit.dBottom <= fit.vh + 1, `${name}: whole dialog fits without scrolling`, `${Math.round(fit.dTop)}–${Math.round(fit.dBottom)} of ${fit.vh}`);
+      await page.screenshot({ path: path.join(SHOTS, `player-portrait-${name}.png`) });
+      check(problems.length === 0, `${name}: no console/network errors`, problems.join(" | "));
+      await context.close();
+    }
   }
 
   console.log("\n▸ Playback & interaction — desktop");

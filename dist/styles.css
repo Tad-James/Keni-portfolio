@@ -458,3 +458,36 @@ button { -webkit-tap-highlight-color: transparent; }
 .wordmark-icon { display: flex; align-items: center; justify-content: center; }
 .project-card { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; }
 @media (max-width: 680px) { .reel-side-text { display: none; } }
+
+/* ═══════════ Vertical (9:16) films ═══════════ */
+.project-grid.is-portrait-wall { grid-template-columns: repeat(5, minmax(0,1fr)); gap: 28px 16px; }
+.project-grid.is-portrait-wall .project-card,
+.project-grid.is-portrait-wall .project-card:last-child:nth-child(odd) { grid-column: auto; }
+.project-grid.is-portrait-wall .project-card .project-art,
+.project-grid.is-portrait-wall .project-card.is-portrait .project-art,
+.project-grid.is-portrait-wall .project-card:last-child:nth-child(odd) .project-art { aspect-ratio: 9 / 16; border-radius: 16px; }
+.project-grid.is-portrait-wall .project-title { font-size: 15px; }
+.project-grid.is-portrait-wall .poster-caption { left: 10px; right: 10px; bottom: 10px; }
+.project-grid.is-portrait-wall .art-label { left: 10px; top: 10px; }
+.project-grid.is-portrait-wall .art-index { right: 10px; top: 10px; }
+@media (max-width: 899px) { .project-grid.is-portrait-wall { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width: 559px) {
+  .project-grid.is-portrait-wall { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 22px 12px; }
+  .project-grid.is-portrait-wall .project-card:last-child:nth-child(odd) { grid-column: 1 / -1; width: calc(50% - 6px); justify-self: center; }
+  .project-grid.is-portrait-wall .project-title { font-size: 14px; }
+  .project-grid.is-portrait-wall .project-subtitle { font-size: 11px; }
+  .project-grid.is-portrait-wall .art-overlay span { width: 42px; height: 42px; font-size: 11px; }
+}
+
+/* player dialog sized for a tall video; side-by-side on landscape phones */
+.media-dialog:has(.is-portrait) { width: min(520px, calc(100% - 24px)); }
+.dialog-media.is-portrait { width: min(100%, max(200px, calc((100dvh - 250px) * 9 / 16))); }
+@media (orientation: landscape) and (max-height: 520px) {
+  .media-dialog:has(.is-portrait) { width: min(780px, calc(100% - 24px)); }
+  .media-dialog:has(.is-portrait) .dialog-shell { display: grid; grid-template-columns: auto minmax(0,1fr); column-gap: 20px; align-items: start; }
+  .media-dialog:has(.is-portrait) .dialog-top { grid-column: 1 / -1; padding-bottom: 8px; }
+  .media-dialog:has(.is-portrait) .dialog-media.is-portrait { grid-column: 1; grid-row: 2 / span 2; width: auto; height: calc(100dvh - 100px); margin: 0; }
+  .media-dialog:has(.is-portrait) .dialog-info { grid-column: 2; grid-row: 2; display: block; padding-top: 0; }
+  .media-dialog:has(.is-portrait) .dialog-description { grid-column: 2; grid-row: 3; }
+  .media-dialog:has(.is-portrait) .dialog-meta { margin-top: 8px; text-align: left; }
+}

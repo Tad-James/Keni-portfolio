@@ -327,7 +327,7 @@
     info.appendChild(el("span", "project-index", pad(entry.index + 1)));
     button.appendChild(info);
     var tagA = clean(project.role);
-    var tagB = [clean(project.year), clean(project.duration)].filter(Boolean).join(" · ");
+    var tagB = clean(project.year); // duration already shows on the poster
     if (tagA || tagB) {
       var tags = el("span", "project-tags");
       tags.appendChild(el("span", "", tagA));
@@ -351,9 +351,12 @@
   function renderProjects(category) {
     grid.replaceChildren();
     var visible = projects.filter(function (entry) { return category === "All" || entry.raw.category === category; });
+    // All-vertical work gets a "reels wall" (tall 9:16 cards side by side); mixed/landscape work uses the 3-up grid.
+    var wall = visible.length > 0 && visible.every(function (entry) { return entry.raw.orientation === "portrait"; });
+    grid.classList.toggle("is-portrait-wall", wall);
     var tail = visible.length % 3;
     visible.forEach(function (entry, i) {
-      var inTail = tail && i >= visible.length - tail && entry.raw.orientation !== "portrait";
+      var inTail = !wall && tail && i >= visible.length - tail && entry.raw.orientation !== "portrait";
       grid.appendChild(makeCard(entry, inTail ? (tail === 1 ? "span-12" : "span-6") : "span-4"));
     });
     count.textContent = pad(visible.length);
@@ -428,7 +431,7 @@
       button.addEventListener("click", function () {
         openPlayer({
           title: reel.title || "Intro", category: "INTRO", meta: clean(reel.duration),
-          description: clean(reel.note), media: reelMedia, project: reel
+          description: clean(reel.note), media: reelMedia, orientation: reel.orientation, project: reel
         }, button);
       });
     });
