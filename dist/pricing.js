@@ -89,7 +89,73 @@
     return terms;
   }
 
+  /* ── paid trial card ──────────────────────────────────────────────── */
+  // Fills {price} {reels} {total} {deposit} {balance} from the trial's own numbers.
+  function trialText(trial, text) {
+    var total = trial.reels * trial.price;
+    var values = {
+      price: formatMoney(trial.price), reels: String(trial.reels), total: formatMoney(total),
+      deposit: formatMoney(trial.deposit), balance: formatMoney(total - trial.deposit)
+    };
+    return clean(text).replace(/\{(\w+)\}/g, function (match, key) {
+      return values.hasOwnProperty(key) ? values[key] : match;
+    });
+  }
+
+  // Only a path on this site may be linked, so content can never point the card elsewhere.
+  function sitePath(value) {
+    var path = clean(value);
+    return /^\/[\w\-./#]*$/.test(path) && path.indexOf("//") !== 0 ? path : "";
+  }
+
+  function trialSteps(trial) {
+    var list = el("ol", "trial-steps");
+    (trial.steps || []).forEach(function (step) {
+      var item = el("li");
+      item.appendChild(el("strong", "", trialText(trial, step.title)));
+      item.appendChild(el("span", "", trialText(trial, step.text)));
+      list.appendChild(item);
+    });
+    return list;
+  }
+
+  function trialMain(trial) {
+    var main = el("div", "trial-main plan-tone-2");
+    main.appendChild(el("p", "pricing-kicker", clean(trial.kicker)));
+    main.appendChild(el("h3", "trial-title", clean(trial.title)));
+    main.appendChild(el("p", "trial-lede", trialText(trial, trial.lede)));
+
+    var actions = el("div", "trial-actions");
+    var start = el("a", "button button-primary", clean(trial.cta) || "Start a trial");
+    start.href = "#contact";
+    var arrow = el("span", "button-arrow", "↗");
+    arrow.setAttribute("aria-hidden", "true");
+    start.appendChild(arrow);
+    actions.appendChild(start);
+    var termsPath = sitePath(trial.termsUrl);
+    if (termsPath) {
+      var terms = el("a", "card-link", clean(trial.termsLabel) || "Trial terms");
+      terms.href = termsPath;
+      actions.appendChild(terms);
+    }
+    main.appendChild(actions);
+    return main;
+  }
+
+  function trialCard(trial) {
+    var card = el("article", "trial-card");
+    card.appendChild(trialMain(trial));
+    var side = el("div", "trial-side");
+    side.appendChild(includedList((trial.facts || []).map(function (pair) {
+      return [pair[0], trialText(trial, pair[1])];
+    })));
+    side.appendChild(trialSteps(trial));
+    card.appendChild(side);
+    return card;
+  }
+
   function renderPackages(panel) {
+    if (data.trial) panel.appendChild(trialCard(data.trial));
     var grid = el("div", "plan-grid");
     data.plans.forEach(function (plan, index) { grid.appendChild(planCard(plan, index)); });
     panel.appendChild(grid);

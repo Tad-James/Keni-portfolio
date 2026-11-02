@@ -237,11 +237,13 @@ async function playsOk(page) {
       const { page, context } = await newPage(browser, origin, { width: 1280, height: 800 }, false);
       await page.goto(origin + "/", { waitUntil: "load" });
       const rows = await page.locator("#contact-rows a.contact-row").evaluateAll((a) => a.map((n) => ({ href: n.href, target: n.target, rel: n.rel, text: n.innerText.replace(/\s+/g, " ") })));
-      check(rows.length === 2, "contact lists Instagram and LinkedIn", rows.map((r) => r.text).join(" | "));
+      check(rows.length === 4, "contact lists email, phone, Instagram and LinkedIn", rows.map((r) => r.text).join(" | "));
+      check(rows.some((r) => r.href === "mailto:kenishakhatriproffesional@gmail.com"), "email row opens a mail draft to the right address");
+      check(rows.some((r) => r.href === "tel:+918608230300" && /\+91 86082 30300/.test(r.text)), "phone row dials +91 86082 30300");
       check(rows.some((r) => r.href === "https://www.instagram.com/kenny_editzvideos/") && rows.some((r) => r.href === "https://www.linkedin.com/in/kenisha-khatri-76055b388"), "contact links point at the right profiles");
-      check(rows.every((r) => r.target === "_blank" && /noopener/.test(r.rel)), "external links open safely in a new tab");
+      check(rows.filter((r) => r.href.startsWith("https://")).every((r) => r.target === "_blank" && /noopener/.test(r.rel)), "external links open safely in a new tab");
       check((await page.locator("#footer-social a").count()) === 2, "footer repeats the social links");
-      check(/message on Instagram or LinkedIn/.test(await page.locator("#contact-note").innerText()), "contact note points at the socials");
+      check((await page.locator("#header-contact").getAttribute("href")) === "mailto:kenishakhatriproffesional@gmail.com", "header 'Let's talk' opens a mail draft");
       check(await page.locator('script[type="application/ld+json"]').count() === 1, "structured data (Person) is present");
       await page.locator("#contact").screenshot({ path: path.join(SHOTS, "contact-desktop.png") });
       await context.close();
@@ -305,7 +307,7 @@ async function playsOk(page) {
     // Scoped to the Work filter bar: the Pricing tabs reuse the chip style but are not film filters.
     check(await page.locator("#filter-bar .filter-chip").count() === 5, "filter chips built from categories (All + 4)");
     check((await page.locator("#header-contact").getAttribute("href")) === "mailto:hello@example.com", "header CTA uses mailto when email set");
-    check((await page.locator(".contact-value").count()) === 2, "contact shows email + Instagram");
+    check((await page.locator(".contact-value").count()) === 3, "contact shows email + phone + Instagram");
 
     // intent warm-up: hovering a card should pull in hls.js before any click
     check(await page.evaluate(() => !window.Hls), "hls.js is NOT loaded on first paint");
@@ -395,6 +397,15 @@ async function playsOk(page) {
     check(!(await page.evaluate(() => document.body.textContent.includes("GST"))), "no GST mention anywhere on the page");
     check(await page.locator('.main-nav a[href="#pricing"]').count() === 1, "nav links to the Pricing section");
 
+    const trialText = await page.locator("#pricing-packages .trial-card").innerText();
+    check(await page.locator("#pricing-packages .trial-card").count() === 1, "paid trial card shows on the Packages view");
+    check(/3 reels at ₹800 each, ₹2,400 in all/i.test(trialText) && /₹1,200/.test(trialText), "trial card states 3 × ₹800 = ₹2,400 with ₹1,200 to start", trialText.slice(0, 120));
+    check(!/[{}]/.test(trialText), "trial card has no unfilled {placeholders}");
+    check(await page.locator('#pricing-packages .trial-card a[href="/terms#trial"]').count() === 1, "trial card links to the trial terms");
+    check(!/free sample/i.test(await page.evaluate(() => document.body.textContent)), "no leftover 'free sample' promise on the page");
+    check(/50% to start, 50% on delivery/i.test(await page.locator("#pricing .work-bottom").innerText()), "pricing footer says 50% to start, 50% on delivery");
+    check(await page.locator('.site-footer a[href="/terms"]').count() === 1, "footer links to the terms page");
+
     for (const [selector, label] of PRICING_VIEWS) {
       await page.locator("#pricing-tabs .filter-chip", { hasText: label }).click();
       check(await page.locator(selector).isVisible(), `"${label}" view opens`);
@@ -416,6 +427,32 @@ async function playsOk(page) {
       await page.locator("#pricing-tabs .filter-chip", { hasText: label }).click();
       await layoutChecks(page, `${vp.name} pricing "${label}"`);
     }
+    await context.close();
+  }
+
+  console.log("\n▸ Terms page");
+  {
+    const { page, context, problems } = await newPage(browser, origin, { width: 1440, height: 900 }, false);
+    const response = await page.goto(origin + "/terms", { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    const text = await page.locator("main").innerText();
+    check(response.status() === 200, "/terms loads (clean URL)");
+    check(/Version 1\.0/i.test(text) && /3 November 2026/i.test(text), "terms are versioned and dated");
+    check(/50% to start, 50% on delivery/i.test(text) && /2% of the invoice amount is added for every 3 days/i.test(text) && /10% of that invoice/i.test(text), "payment, late fee and its cap are stated");
+    check(/Chennai/.test(text) && /Indian law/.test(text), "governing law and place are stated");
+    const trialSection = await page.locator("#trial").innerText();
+    check(/₹800/.test(trialSection) && /₹2,400/.test(trialSection) && /₹1,200/.test(trialSection) && /24 hours/.test(trialSection), "trial section carries the trial numbers");
+    const brokenAnchors = await page.evaluate(() => Array.from(document.querySelectorAll('main a[href^="#"]')).filter((a) => !document.getElementById(a.getAttribute("href").slice(1))).map((a) => a.getAttribute("href")));
+    check(brokenAnchors.length === 0, "every in-page link points at a real section", brokenAnchors.join(", "));
+    check(!/[A-Za-z0-9._]+@ptyes/.test(await page.content()), "UPI ID is not on the public page");
+    check(problems.length === 0, "terms: no console/network errors", problems.join(" | "));
+    await context.close();
+  }
+  for (const vp of VIEWPORTS) {
+    const { page, context } = await newPage(browser, origin, vp, false);
+    await page.goto(origin + "/terms", { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    await layoutChecks(page, `${vp.name} terms`);
     await context.close();
   }
 

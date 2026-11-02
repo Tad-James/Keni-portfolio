@@ -472,6 +472,10 @@
       row("EMAIL", email, "mailto:" + email, false);
       document.getElementById("header-contact").href = "mailto:" + email;
     }
+    // The number is shown as written ("+91 86082 30300"); the dial link keeps only "+" and digits.
+    var phone = clean(data.phone);
+    var dialNumber = phone.replace(/[^\d+]/g, "");
+    if (/^\+?\d{10,13}$/.test(dialNumber)) row("PHONE", phone, "tel:" + dialNumber, false);
     (Array.isArray(data.socials) ? data.socials : []).forEach(function (social) {
       var url = allowedUrl(social && social.url);
       var label = clean(social && social.label);
