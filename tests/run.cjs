@@ -243,7 +243,7 @@ async function playsOk(page) {
       check(rows.some((r) => r.href === "https://www.instagram.com/kenny_editzvideos/") && rows.some((r) => r.href === "https://www.linkedin.com/in/kenisha-khatri-76055b388"), "contact links point at the right profiles");
       check(rows.filter((r) => r.href.startsWith("https://")).every((r) => r.target === "_blank" && /noopener/.test(r.rel)), "external links open safely in a new tab");
       check((await page.locator("#footer-social a").count()) === 2, "footer repeats the social links");
-      check((await page.locator("#header-contact").getAttribute("href")) === "mailto:kenishakhatriproffesional@gmail.com", "header 'Let's talk' opens a mail draft");
+      check((await page.locator("#header-contact").getAttribute("href")) === "#contact", "header 'Let's talk' scrolls to the Contact section");
       check(await page.locator('script[type="application/ld+json"]').count() === 1, "structured data (Person) is present");
       await page.locator("#contact").screenshot({ path: path.join(SHOTS, "contact-desktop.png") });
       await context.close();
@@ -306,7 +306,7 @@ async function playsOk(page) {
     check(await page.locator(".project-card").count() === 7, "7 project cards render");
     // Scoped to the Work filter bar: the Pricing tabs reuse the chip style but are not film filters.
     check(await page.locator("#filter-bar .filter-chip").count() === 5, "filter chips built from categories (All + 4)");
-    check((await page.locator("#header-contact").getAttribute("href")) === "mailto:hello@example.com", "header CTA uses mailto when email set");
+    check((await page.locator("#header-contact").getAttribute("href")) === "#contact", "header CTA stays on the Contact section even when email is set");
     check((await page.locator(".contact-value").count()) === 3, "contact shows email + phone + Instagram");
 
     // intent warm-up: hovering a card should pull in hls.js before any click

@@ -470,7 +470,6 @@
     var names = [];
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       row("EMAIL", email, "mailto:" + email, false);
-      document.getElementById("header-contact").href = "mailto:" + email;
     }
     // The number is shown as written ("+91 86082 30300"); the dial link keeps only "+" and digits.
     var phone = clean(data.phone);
