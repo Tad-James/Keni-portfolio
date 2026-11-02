@@ -55,5 +55,205 @@ window.KENISHA_PORTFOLIO = {
     { id: "03", title: "Podcast Edit — Tamil",   category: "Podcast",      language: "Tamil",   orientation: "portrait", duration: "00:43", video: "mux:P400014GnSe3gS5ddHlzrMA014vhdq02kirasQZ402tJzqAw",         note: "Podcast clip edit in Tamil." },
     { id: "04", title: "Breaking Bad — Intro Remake", category: "Remake",  language: "",        orientation: "portrait", duration: "00:25", video: "mux:68jPTtna0202btjf01EHTM5WJEXPa5sOAjPhcp00w527oeQ",         note: "A remake of the Breaking Bad title sequence." },
     { id: "05", title: "Multilingual Voice Agent — Product Demo", category: "Product Demo", language: "Multilingual", orientation: "portrait", duration: "01:07", video: "mux:3GS3G02yUyp8i01MX2mEa02UXbKZEqOv4rFGbzVTNGAcys", note: "SaaS demo video for a multilingual voice agent." }
-  ]
+  ],
+
+  /* ─────────────────────────────────────────────────────────────────────
+   *  PRICING — monthly reel packages. Everything in the Pricing section
+   *  comes from here. Prices are in rupees.
+   *  Leave `pricing` out entirely and the section (and its nav link) hide.
+   *  A feature can be a plain string, or { lead: "…" } for a bold lead-in.
+   * ───────────────────────────────────────────────────────────────────── */
+  pricing: {
+    lede: "Finished vertical reels cut from your long videos, on one fixed monthly price in rupees. I pick the moments, edit them and deliver.",
+    cta: "Get a free sample reel",
+    included: [
+      ["TURNAROUND", "72 hours from footage received"],
+      ["REVISIONS", "2 rounds per reel"],
+      ["BILLING", "Monthly, upfront"],
+      ["FREE SAMPLE", "One reel from your own video"]
+    ],
+    plans: [
+      { name: "Starter", reels: 8, price: 10000,
+        features: [
+          "8 finished 9:16 reels from your long-form videos",
+          "Best moments picked for your audience, not just the loudest",
+          "Hook-first edit, animated captions, zooms, music and sound effects",
+          "Captions in English, Hindi or Tamil",
+          "2 revision rounds per reel"
+        ],
+        turnaround: "72 hours from footage received" },
+      { name: "Growth", reels: 16, price: 19500,
+        features: [
+          { lead: "Everything in Starter, plus" },
+          "16 finished reels, delivered weekly in batches",
+          "A cover frame for every reel",
+          "One saved style per brand, so every reel matches",
+          "Shared tracker to approve reels in one place"
+        ],
+        turnaround: "72 hours per batch" },
+      { name: "Scale", reels: 30, price: 35000,
+        features: [
+          { lead: "Everything in Growth, plus" },
+          "30 finished reels, about one a day",
+          "Reserved capacity: your batches go first in my queue",
+          "Up to 3 brand or client styles",
+          "Monthly review of which reels worked, to steer the next month"
+        ],
+        turnaround: "72 hours per batch" },
+      { name: "Custom", custom: true, reelsLabel: "40+ reels", priceLabel: "Quoted to fit", perNote: "Roughly ₹1,000 per reel at this volume",
+        features: [
+          "Tell me your volume, formats and deadlines and I send one fixed monthly quote",
+          { lead: "What changes the price" },
+          "More than 40 reels a month",
+          "Motion-graphic reels",
+          "Script-to-post, or scheduling and posting",
+          "Delivery faster than 72 hours",
+          "Several clients or house styles (agencies)"
+        ],
+        turnaround: "Fixed quote, agreed before any work starts" }
+    ],
+
+    /* Honest side-by-side with real done-for-you clipping companies that publish
+       their prices. Everything about them was read from their own pricing pages
+       on 2 Nov 2026. Dollar prices are converted at an assumed ₹88. */
+    vs: {
+      tabLabel: "vs Other Companies",
+      eyebrow: "Compared with real clipping companies",
+      title: "Me vs. other clipping companies",
+      lede: "These four sell done-for-you reels on monthly plans, the same kind of service as mine. They are the ones with public prices I could check, not an official ranking. Where they are stronger than me, I say so.",
+      companiesTitle: "The companies",
+      companies: [
+        { name: "Vidchops", text: "Dedicated-editor service for YouTubers, billed in dollars. Says it has edited 3,000+ videos.", url: "https://www.vidchops.com/pricing" },
+        { name: "Vidpros", text: "Flat monthly plans sold as video output, with a $100 trial week and no more than 4 clients per editor.", url: "https://vidpros.com/pricing/" },
+        { name: "Reelkraft Media", text: "Indian studio selling Reels plus graphic posts on rupee retainers from ₹15,000. Says it has scaled 100+ brands.", url: "https://www.reelkraftmedia.com/pricing" },
+        { name: "Suraj Digital", text: "Indian studio with retainers from ₹15,000 for up to 8 Reels. Says it has 120+ clients.", url: "https://surajdigital.com/video-editing/" }
+      ],
+      choose: [
+        { title: "Choose me if", me: true, items: [
+          "You want finished reels from long videos at the lowest monthly price for a similar number of reels",
+          "You want a person to pick moments for your audience and your offer",
+          "Your captions are in English, Hindi or Tamil and you want a native speaker to check them",
+          "You want to see a free sample from your own video before paying"
+        ] },
+        { title: "Choose Vidchops if", items: [
+          "You want a dedicated editor and, on the Pro plan, a named account manager",
+          "You want a 14-day money-back guarantee",
+          "You need 1–2 day turnaround, and long-form videos edited as well"
+        ] },
+        { title: "Choose Vidpros if", items: [
+          "You need 20 to 160 shorts a month, or a mix with long-form videos",
+          "You want unlimited revisions and a $100 trial week",
+          "You want a project manager and a backup editor (Growth plan)"
+        ] },
+        { title: "Choose Reelkraft or Suraj Digital if", items: [
+          "You want graphic posts or YouTube videos in the same monthly plan (Reelkraft)",
+          "You want 24-hour priority delivery or unlimited revisions (Suraj Digital)",
+          "You need a multi-editor team or white-label work for your own clients"
+        ] }
+      ],
+      priceTitle: "Pricing comparison",
+      priceColumns: ["Monthly volume", "Me", "Vidchops", "Vidpros", "Reelkraft Media", "Suraj Digital"],
+      priceColumnSubs: ["", "Rupees", "Dollars", "Dollars", "Rupees", "Rupees"],
+      priceRows: [
+        ["About 8 reels", { plan: "Starter", text: "a month for 8 reels" }, "Smallest plan: $495 (about ₹43,560) for 16 shorts", "Smallest plan: $1,000 (about ₹88,000) for 20–40 shorts", "₹15,000 for 8 Reels plus 8 graphic posts", "₹15,000 for up to 8 Reels"],
+        ["About 16 reels", { plan: "Growth", text: "a month for 16 reels" }, "$495 (about ₹43,560) for 16 shorts", "$1,000 (about ₹88,000) for 20–40 shorts", "₹35,000 for 20 Reels, 10 posts and 1 YouTube video", "₹30,000 for up to 20 videos in any format"],
+        ["About 30 reels", { plan: "Scale", text: "a month for 30 reels" }, "$995 (about ₹87,560) for up to 32 shorts", "$1,000 (about ₹88,000) covers up to 40 shorts", "₹70,000+ for 40+ assets across formats", "No plan above 20 videos listed"],
+        ["Rough price per reel, at 16 reels", "₹1,219", "About ₹2,723", "About ₹2,200 to ₹4,400", "About ₹1,750 on Reels alone, or ₹1,129 across all 31 assets", "About ₹1,500 per video"],
+        ["Billing", "Rupees, monthly, upfront", "Dollars. No contract, cancel anytime.", "Dollars. No contracts, cancel anytime.", "Rupees. Contract terms not stated.", "Rupees. Contract terms not stated."]
+      ],
+      priceNote: "Reelkraft Media and Suraj Digital include other formats in the same retainer, so their price per reel is not like for like with mine. Prices were read from each company's own page on 2 Nov 2026 and can change. Dollar amounts converted at an assumed ₹88.",
+      featureTitle: "Feature comparison",
+      featureColumns: ["Feature", "Me", "Vidchops", "Vidpros", "Reelkraft Media", "Suraj Digital"],
+      featureGroups: [
+        { title: "Reliability", rows: [
+          ["Turnaround", "72 hours from footage received, in writing", "1–2 days, guaranteed", "Overnight; shorts next day in batches of 3", "48 hours on Starter, 24 hours on Growth", "24–48 hours for Reels; 24-hour priority on the retainer"],
+          ["Revisions", "2 rounds per reel", "3 per video on Weekly; unlimited on Pro", "Unlimited, but each round counts toward your monthly output", "2 rounds on Starter, 4 on Growth, unlimited on Scale", "Unlimited on the ₹15,000 retainer"],
+          ["Who edits", "Me, directly", "A dedicated editor; an account manager on Pro", "No more than 4 clients per editor; project manager and backup editor on Growth", "A dedicated senior editor on Growth; a squad on Scale", "A dedicated editor"]
+        ] },
+        { title: "Trying and fit", rows: [
+          ["Try before you commit", "Free sample reel from your own video", "14-day money-back guarantee", "$100 trial week", "Not listed", "Not listed"],
+          ["Captions and languages", "English, Hindi, Tamil, with a native-speaker check", "Captions on shorts; language support not stated", "AI captions; language support not stated", "Captions; language support not stated", "Captions; language support not stated"],
+          ["Left out of the base price", "Posting and scheduling, scripts, thumbnails", "Captions: the plan page says included, the FAQ lists $95 a month extra", "Revision rounds use up your monthly output", "YouTube videos and ad variants on Starter; a strategist", "Not stated"]
+        ] },
+        { title: "Proof on their own site", rows: [
+          ["What they show", "Five films in the portfolio above", "Says 3,000+ videos edited, plus client testimonials", "One case study; no client total", "Says 100+ brands; no named clients", "Says 120+ clients and 500+ videos this year"]
+        ] }
+      ],
+      featureNote: "The Me column states what I offer, not past results. Claims marked as what a company says come from its own site and are not verified.",
+      stepsTitle: "Getting started",
+      steps: [
+        { title: "Send one long video", text: "An episode, a lesson or a recording you already have. A public link is enough." },
+        { title: "See a free sample", text: "I make one finished reel from it, so you judge the work before paying." },
+        { title: "Pick a package", text: "Starter, Growth, Scale or a custom quote. Billed monthly upfront." },
+        { title: "Reels arrive in 72 hours", text: "Counted from the day I have all your footage. Send one list of changes, up to 2 rounds." }
+      ],
+      faqTitle: "Common questions",
+      faq: [
+        ["Why not hire one of the bigger companies?", "If you need dozens of shorts a month, long-form edits, a project manager or same-day delivery, the larger teams are built for that. I am a solo editor, so I take fewer clients and you work with me directly, at a lower price."],
+        ["Why is your turnaround slower than theirs?", "These companies list 24 to 48 hours for most plans. I promise 72 hours in writing, counted from the day I have all your footage, and keep it on every reel."],
+        ["Do you use AI too?", "Yes. I use AI tools for transcription and cutting assistance, and I review every reel myself. I do not create AI people or fully generated videos."],
+        ["Can you handle podcasts with several speakers?", "Face-aware reframing for several speakers is not automated on my side yet. Those reels are reframed by hand, and I confirm that with you at the free-sample stage."],
+        ["Do you post the reels for me?", "Not in the base packages. Posting and scheduling is an add-on that I quote separately."],
+        ["What if I need more than 30 reels a month?", "Use the Custom plan. Tell me your volume, formats and deadlines and I send a fixed monthly quote, at roughly ₹1,000 per reel at this volume."]
+      ],
+      sources: [
+        { label: "Vidchops", url: "https://www.vidchops.com/pricing" },
+        { label: "Vidpros", url: "https://vidpros.com/pricing/" },
+        { label: "Reelkraft Media", url: "https://www.reelkraftmedia.com/pricing" },
+        { label: "Suraj Digital", url: "https://surajdigital.com/video-editing/" }
+      ],
+      sourceNote: "Read on 2 Nov 2026. Not affiliated with any of these companies."
+    },
+
+    /* Every way to get reels made, side by side. */
+    options: {
+      title: "Five ways to get 16 reels a month",
+      lede: "Monthly cost for a fixed number of reels, drawn to one scale. The cheapest options leave the work with you: the tool needs an operator, and a hire needs software, briefing and management. Only one of these is done-for-you at a fixed price.",
+      chart: {
+        max: 150000, step: 25000,
+        rows: [
+          { name: "AI clipper tool plan", lo: 1320, hi: 3432, label: "$15–39, about ₹1,300–3,400" },
+          { name: "In-house editor, base salary", lo: 18000, hi: 35000, label: "₹18,000 – 35,000" },
+          { name: "Me, 16 reels (Growth)", lo: 19500, hi: 19500, label: "₹19,500", mine: true },
+          { name: "Freelance editor, 16 reels", lo: 16000, hi: 80000, label: "₹16,000 – 80,000" },
+          { name: "Agency retainer", lo: 25000, hi: 150000, label: "₹25,000 – 1,50,000+" }
+        ],
+        note: "Tool prices are in US dollars, converted at an assumed ₹88. Freelance cost is the stated ₹1,000–5,000 per reel times 16. Agency retainers cover 12–20+ reels. Salary is base pay only."
+      },
+      tableTitle: "Side by side, on what buyers check",
+      columns: ["What you compare", "Me", "AI clipper tool", "Freelance editor", "Agency or studio", "In-house editor"],
+      columnSubs: ["", "Done-for-you monthly reels", "Software you run yourself", "Marketplace or DM", "Retainer", "Salaried hire"],
+      groups: [
+        { title: "Cost", rows: [
+          ["Monthly cost, about 16 reels", "₹19,500 fixed (₹1,219 per reel)", "$15–39 for a plan (about ₹1,300–3,400), plus your own time", "₹16,000–80,000 (₹1,000–5,000 per reel)", "₹25,000–1,50,000+ (retainers for 12–20+ reels)", "₹18,000–35,000 base salary, before software and management time"],
+          ["How the price behaves", "Fixed monthly, agreed before work starts", "Fixed plan, capped by a monthly credit limit", "Per reel; extra revisions are billed", "Monthly retainer; rush delivery adds 20–60% across the market", "Same salary however much gets made"]
+        ] },
+        { title: "Quality of the reels", rows: [
+          ["Who picks the moments", "A person, using your audience and offer as the brief", "An algorithm ranks clips by a virality score. Reviewers report uneven scoring, though one found it useful for sorting", "The editor, unless you pick for them", "The agency's editor or strategist", "Your employee, who knows your brand best"],
+          ["Reels ready to post", "Delivered finished after a written quality checklist: hook in 2 seconds, captions checked, loudness matched", "Reviews range from about 80% ready with caption tweaks to only a few usable; clips sometimes cut before a thought ends", "Delivered finished; quality depends on the seller, so check samples in your niche", "Delivered finished; check samples in your niche", "Delivered finished; quality depends on the person hired"],
+          ["Matching your brand style", "A saved style per brand (Growth and up)", "Templates and brand settings; the Pro plan lists up to four brand templates", "Depends on the seller", "Depends on the agency", "Consistent once trained"]
+        ] },
+        { title: "Your effort", rows: [
+          ["Work left for you", "Send footage, approve reels, send one list of changes", "Upload, review every clip, fix captions and cut points, export", "Brief, give feedback, follow up", "Brief and approve", "Brief, manage, review"]
+        ] },
+        { title: "Reliability", rows: [
+          ["Turnaround", "72 hours from footage received, written into the agreement", "Minutes to process, then your review time", "No market standard is published; agree it before you start", "No market standard is published; agree it before you start", "Same day is possible, within one person's workload"],
+          ["Revisions", "2 rounds per reel included", "You make the changes yourself", "Usually 1–2 rounds, then billed", "Usually 1–2 rounds, then billed", "Unlimited, but it uses their time"],
+          ["Changing volume", "Switch between 8, 16, 30 or 40+ reels each month", "Limited by plan credits", "Limited by one person's time", "The retainer sets the count", "Fixed capacity; more volume means another hire"],
+          ["Trying before paying", "Free sample made from your own content", "Free plans exist, with watermarked exports and a 3-day expiry", "Varies by seller", "Varies by agency", "Through the hiring process"]
+        ] },
+        { title: "Fit", rows: [
+          ["Best when", "You have long-form footage, want finished reels every week and do not want to manage an editor", "You have the time and a tight budget", "You need small, occasional batches from someone you trust", "You also need strategy, shooting or posting", "Video is daily work across many formats"],
+          ["Look elsewhere when", "You want shooting, scripting, posting, or the lowest price available", "Every reel has to be right without a review", "You need a guaranteed volume every week", "Your budget is under about ₹25,000 a month, their retainer floor", "The output would not justify a salary"]
+        ] }
+      ],
+      sources: [
+        { label: "Reel editing rates, Viptro", url: "https://viptro.com/reels-editing-charges-india/" },
+        { label: "Reel editing rates, Plumlet", url: "https://plumlet.app/reel-editing-charges-india" },
+        { label: "Editor salaries, Fueler", url: "https://fueler.io/blog/video-editor-salary-in-india" },
+        { label: "OpusClip pricing", url: "https://www.opus.pro/pricing" }
+      ],
+      sourceNote: "Rates are asking prices from sellers, read in Nov 2026. India has no official tariff for freelance editing. Check any figure before relying on it."
+    }
+  }
 };
