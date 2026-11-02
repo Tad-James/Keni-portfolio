@@ -302,7 +302,8 @@ async function playsOk(page) {
     await page.goto(origin + "/", { waitUntil: "load" });
 
     check(await page.locator(".project-card").count() === 7, "7 project cards render");
-    check(await page.locator(".filter-chip").count() === 5, "filter chips built from categories (All + 4)");
+    // Scoped to the Work filter bar: the Pricing tabs reuse the chip style but are not film filters.
+    check(await page.locator("#filter-bar .filter-chip").count() === 5, "filter chips built from categories (All + 4)");
     check((await page.locator("#header-contact").getAttribute("href")) === "mailto:hello@example.com", "header CTA uses mailto when email set");
     check((await page.locator(".contact-value").count()) === 2, "contact shows email + Instagram");
 
@@ -376,6 +377,45 @@ async function playsOk(page) {
     await page.locator('.filter-chip[data-filter="All"]').click();
     check(await page.locator(".project-card").count() === 7, "All filter restores 7");
     check(problems.filter((p) => !/cccccc/.test(p)).length === 0, "no unexpected console errors", problems.join(" | "));
+    await context.close();
+  }
+
+  console.log("\n▸ Pricing section");
+  const PRICING_VIEWS = [["#pricing-packages", "Packages"], ["#pricing-vs", "vs Other Companies"], ["#pricing-options", "All options"]];
+  {
+    const { page, context, problems } = await newPage(browser, origin, { width: 1440, height: 900 }, false);
+    await page.goto(origin + "/", { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+
+    check(await page.locator("#pricing .plan-card").count() === 4, "four plans render (three priced, one custom)");
+    const amounts = await page.locator("#pricing .plan-amount").allTextContents();
+    check(amounts.slice(0, 3).join(" ") === "₹10,000 ₹19,500 ₹35,000", "plans are ₹10,000 / ₹19,500 / ₹35,000", amounts.join(" "));
+    const perReel = (await page.locator("#pricing .plan-per").allTextContents()).slice(0, 3).join("|");
+    check(perReel === "₹1,250 per reel|₹1,219 per reel|₹1,167 per reel", "per-reel prices follow from the plan prices", perReel);
+    check(!(await page.evaluate(() => document.body.textContent.includes("GST"))), "no GST mention anywhere on the page");
+    check(await page.locator('.main-nav a[href="#pricing"]').count() === 1, "nav links to the Pricing section");
+
+    for (const [selector, label] of PRICING_VIEWS) {
+      await page.locator("#pricing-tabs .filter-chip", { hasText: label }).click();
+      check(await page.locator(selector).isVisible(), `"${label}" view opens`);
+      check(await page.locator("#pricing .pricing-panel:visible").count() === 1, `"${label}": only one view is visible`);
+    }
+    await page.locator("#pricing-tabs .filter-chip", { hasText: "vs Other Companies" }).click();
+    const companies = await page.locator("#pricing-vs .built-card h4").allTextContents();
+    check(companies.join(", ") === "Vidchops, Vidpros, Reelkraft Media, Suraj Digital", "comparison names the four companies", companies.join(", "));
+    const unsafe = await page.locator('#pricing a[target="_blank"]').evaluateAll((links) => links.filter((a) => !/noopener/.test(a.rel) || !a.href.startsWith("https://")).length);
+    check(unsafe === 0, "external pricing links are https and open safely");
+    check(problems.length === 0, "pricing: no console/network errors", problems.join(" | "));
+    await context.close();
+  }
+  for (const vp of VIEWPORTS) {
+    const { page, context } = await newPage(browser, origin, vp, false);
+    await page.goto(origin + "/", { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    for (const [, label] of PRICING_VIEWS) {
+      await page.locator("#pricing-tabs .filter-chip", { hasText: label }).click();
+      await layoutChecks(page, `${vp.name} pricing "${label}"`);
+    }
     await context.close();
   }
 
