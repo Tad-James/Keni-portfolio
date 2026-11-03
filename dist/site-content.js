@@ -62,7 +62,8 @@ window.KENISHA_PORTFOLIO = {
     { id: "06", title: "Podcast Edit — 06",     category: "Podcast",      language: "",        orientation: "portrait", duration: "",      video: "mux:YV7oi148NcGXEyCAropLX1ADgiKKtB801f2jTk7IARpw",              note: "Podcast clip edit." },
     { id: "07", title: "Podcast Edit — 07",     category: "Podcast",      language: "",        orientation: "portrait", duration: "",      video: "mux:y015vPvUZ01300lCcUDV5z2BH3d02N9NXB3KHuhbabhMa34",           note: "Podcast clip edit." },
     { id: "08", title: "Multilingual Voice Agent — Product Demo", category: "Product Demo", language: "Multilingual", orientation: "portrait", duration: "01:07", video: "mux:3GS3G02yUyp8i01MX2mEa02UXbKZEqOv4rFGbzVTNGAcys", note: "SaaS demo video for a multilingual voice agent." },
-    { id: "09", title: "Real Estate Reel",       category: "Real Estate",  language: "",        orientation: "portrait", duration: "",      video: "mux:qP1yezBreFFbvU1QvQNGwlySsfM01eT9r6mxF5rxceQQ",             note: "Real estate property reel." }
+    { id: "09", title: "Real Estate Reel — 01",  category: "Real Estate",  language: "",        orientation: "portrait", duration: "",      video: "mux:qP1yezBreFFbvU1QvQNGwlySsfM01eT9r6mxF5rxceQQ",             note: "Real estate property reel." },
+    { id: "10", title: "Real Estate Reel — 02",  category: "Real Estate",  language: "",        orientation: "portrait", duration: "",      video: "mux:AN3TPay00WS01yrCiwGO8Pg2DWM1002Bch5kP3q00gN02Dag",          note: "Real estate property reel." }
   ],
 
   /* ─────────────────────────────────────────────────────────────────────
