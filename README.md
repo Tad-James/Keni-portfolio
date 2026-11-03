@@ -14,7 +14,7 @@ here — they stream from a video host, so pages stay light and playback starts 
 **YouTube:** studio.youtube.com → Create → Upload videos → on *Visibility* choose
 **Unlisted** → Publish → copy the share link. Unlisted videos are hidden from search
 but play on your site. Keep **Allow embedding** on (default). Note: YouTube may
-restrict or claim videos that use copyrighted material (e.g. the Breaking Bad remake).
+restrict or claim videos that use copyrighted material.
 
 **Mux:** mux.com → free account → Video → **Assets → Add video asset** → upload →
 copy the **Playback ID** (policy must be *Public*) → `video: "mux:PLAYBACK_ID"`.
@@ -42,6 +42,29 @@ Leave it `""` and the card shows **Coming soon**.
 Optional per-project fields: `role`, `year`, `duration` (e.g. `"12:30"`),
 `orientation: "portrait"`, `posterTime: "5s"` (which frame is the thumbnail),
 or `poster` (your own image URL).
+
+## Add a film
+
+In `dist/site-content.js`, copy a line in `projects`, give it the next `id`, a `title`,
+a `category` (`Podcast`, `Real Estate`, `Product Demo`; a new category gets its own filter
+chip automatically) and paste the Mux playback ID as `video: "mux:PLAYBACK_ID"`.
+Optional: `duration: "00:46"`, `language`, `note`. Leave `video: ""` for a "Coming soon" card.
+
+## Prices in S$ and AED
+
+Prices are written in rupees. A **PRICES IN** switch above the packages shows them in
+Singapore dollars or UAE dirhams as a guide; billing stays in rupees.
+
+- Rates come from [Frankfurter](https://frankfurter.dev/) (reference rates, no key), fetched only when a visitor
+  first picks S$ or AED, then cached for 12 hours. Implausible data is refused.
+- If the service can't be reached, the dated rates in `pricing.fx` (`site-content.js`) are used and the page says
+  "Live rates could not be loaded". Refresh them now and then from
+  `https://api.frankfurter.dev/v2/rates?base=INR&quotes=SGD,AED,USD`.
+- Amounts in pricing text are written as tokens so they convert: `{inr:1200}`, `{inr:1000-5000}`,
+  `{usd:100}`, `{usda:495}` (dollar price with an "(about ₹…)" gloss in rupee mode) and
+  `{trial:deposit|total|price|balance}`. Plan and trial numbers (`price`, `reels`, `deposit`) convert on their own.
+- Converted figures are rounded to clean numbers within about 2.5%, and the paid-trial figures always add up.
+- The terms page stays in rupees.
 
 ## Fill in the remaining details
 

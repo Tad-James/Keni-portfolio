@@ -353,6 +353,8 @@
     // All-vertical work gets a "reels wall" (tall 9:16 cards side by side); mixed/landscape work uses the 3-up grid.
     var wall = visible.length > 0 && visible.every(function (entry) { return entry.raw.orientation === "portrait"; });
     grid.classList.toggle("is-portrait-wall", wall);
+    // 4 to 6 films fill one desktop row exactly; more wrap in rows of 5. Set through CSSOM, which the site's CSP allows.
+    grid.style.setProperty("--wall-cols", String(visible.length >= 4 && visible.length <= 6 ? visible.length : 5));
     var tail = visible.length % 3;
     visible.forEach(function (entry, i) {
       var inTail = !wall && tail && i >= visible.length - tail && entry.raw.orientation !== "portrait";
