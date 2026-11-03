@@ -22,7 +22,7 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {
-      "source": "/(styles\\.css|fonts\\.css|app\\.js|pricing\\.js|site-content\\.js|index\\.html|terms|terms\\.html)",
+      "source": "/(styles\\.css|fonts\\.css|app\\.js|pricing\\.js|currency\\.js|site-content\\.js|index\\.html|terms|terms\\.html)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     }
   ]

@@ -22,6 +22,10 @@ const IDS = { reel: "a".repeat(32), p1: "b".repeat(32), broken: "c".repeat(32) }
 const SECURITY = Object.fromEntries(((JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8")).headers || [])[0] || { headers: [] }).headers.map((h) => [h.key.toLowerCase(), h.value]));
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".m3u8": "application/vnd.apple.mpegurl", ".ts": "video/mp2t", ".mp4": "video/mp4", ".txt": "text/plain" };
 
+/* Mock of api.frankfurter.dev. "ok" serves slightly different rates than the saved ones, so a live fetch is visible. */
+const fx = { mode: "ok", hits: 0 };
+const FX_LIVE = [["AED", 0.040214], ["SGD", 0.014], ["USD", 0.01095]].map(([quote, rate]) => ({ date: "2026-11-04", base: "INR", quote, rate }));
+
 let failures = 0;
 function check(ok, label, extra) {
   console.log((ok ? "  ✓ " : "  ✗ ") + label + (extra ? "  → " + extra : ""));
@@ -87,6 +91,8 @@ function mockContent(origin) {
   data.about.tools = ["Premiere Pro", "DaVinci Resolve"];
   data.showreel.video = IDS.reel;
   data.showreel.duration = "00:45";
+  data.projects = data.projects.slice(0, 5); // the tests below index these by position
+  data.projects[3].category = "Real Estate";
   data.projects[0].video = IDS.p1;
   data.projects[0].duration = "42:10";
   data.projects[0].role = "Editor";
@@ -112,6 +118,13 @@ async function newPage(browser, origin, viewport, mock) {
     await page.route("**/site-content.js", (route) => route.fulfill({ contentType: "text/javascript", body: content }));
   }
   {
+    await page.route("https://api.frankfurter.dev/**", (route) => {
+      fx.hits += 1;
+      const headers = { "access-control-allow-origin": "*" };
+      if (fx.mode === "fail") return route.fulfill({ status: 503, headers, body: "down" });
+      if (fx.mode === "bad") return route.fulfill({ headers, contentType: "application/json", body: JSON.stringify(FX_LIVE.map((r) => r.quote === "SGD" ? { ...r, rate: 0.5 } : r)) });
+      return route.fulfill({ headers, contentType: "application/json", body: JSON.stringify(FX_LIVE) });
+    });
     await page.route("https://stream.mux.com/**", (route) => {
       const name = new URL(route.request().url()).pathname.split("/").pop();
       const isSegment = /^[vp]\d+(_\d+)?\.(m3u8|ts)$/.test(name);
@@ -217,12 +230,15 @@ async function playsOk(page) {
       "Podcast Edit — Hindi": "v7Ovrcx9G1tObKLcoSgpwSpnKpQDffOrrgAm6Xm01TcA",
       "Podcast Edit — English": "AHBS2k7pXjCrRjfmoGh3siio45fXI00qoo5OSUtK4D8g",
       "Podcast Edit — Tamil": "P400014GnSe3gS5ddHlzrMA014vhdq02kirasQZ402tJzqAw",
-      "Breaking Bad — Intro Remake": "68jPTtna0202btjf01EHTM5WJEXPa5sOAjPhcp00w527oeQ",
-      "Multilingual Voice Agent — Product Demo": "3GS3G02yUyp8i01MX2mEa02UXbKZEqOv4rFGbzVTNGAcys"
+      "Podcast Edit": "02uwHBJ78Oytkp2OwbwTHQfjNewsaHrXeXQizSZLojYI",
+      "Multilingual Voice Agent — Product Demo": "3GS3G02yUyp8i01MX2mEa02UXbKZEqOv4rFGbzVTNGAcys",
+      "Real Estate Reel": "qP1yezBreFFbvU1QvQNGwlySsfM01eT9r6mxF5rxceQQ"
     };
     const mapped = Object.fromEntries(shipped.projects.map((p) => [p.title, p.video]));
     check(Object.entries(expected).every(([t, id]) => mapped[t] === "mux:" + id), "each title maps to the right Mux playback ID");
-    check(shipped.projects.every((p) => p.orientation === "portrait"), "all five films are marked vertical (9:16)");
+    check(shipped.projects.length === 6 && shipped.projects.every((p) => p.orientation === "portrait"), "all six films are marked vertical (9:16)");
+    check(!shipped.projects.some((p) => /remake|breaking bad/i.test(p.title + p.category + p.note)), "the Breaking Bad remake is gone from the films");
+    check(shipped.projects.every((p) => p.video), "every shipped film has a video (no 'coming soon' cards in production)");
     {
       const { page, context } = await newPage(browser, origin, { width: 1280, height: 800 }, false);
       await page.goto(origin + "/", { waitUntil: "load" });
@@ -259,7 +275,7 @@ async function playsOk(page) {
       await context.close();
     }
 
-    for (const [name, width, height, cols] of [["desktop", 1440, 900, 5], ["tablet", 768, 1024, 3], ["phone", 390, 844, 2]]) {
+    for (const [name, width, height, cols] of [["desktop", 1440, 900, 6], ["tablet", 768, 1024, 3], ["phone", 390, 844, 2]]) {
       const { page, context } = await newPage(browser, origin, { width, height }, false);
       await page.goto(origin + "/", { waitUntil: "load" });
       await page.locator(".project-card img").first().waitFor();
@@ -426,6 +442,137 @@ async function playsOk(page) {
     for (const [, label] of PRICING_VIEWS) {
       await page.locator("#pricing-tabs .filter-chip", { hasText: label }).click();
       await layoutChecks(page, `${vp.name} pricing "${label}"`);
+    }
+    await context.close();
+  }
+
+  console.log("\n▸ Films — real estate section, remake removed");
+  {
+    const { page, context, problems } = await newPage(browser, origin, { width: 1440, height: 900 }, false);
+    await page.goto(origin + "/", { waitUntil: "load" });
+    const chips = (await page.locator("#filter-bar .filter-chip").allTextContents()).map((c) => c.replace(/\d+$/, "").trim());
+    check(chips.join("|") === "All work|Podcast|Product Demo|Real Estate", "filter chips are All, Podcast, Product Demo, Real Estate", chips.join("|"));
+    check(await page.locator(".project-card").count() === 6 && (await page.locator("#project-count").innerText()) === "06", "six films, counter says 06");
+    await page.locator("#filter-bar .filter-chip", { hasText: "Real Estate" }).click();
+    check(await page.locator(".project-card").count() === 1, "Real Estate filter shows its reel");
+    await page.locator("#filter-bar .filter-chip", { hasText: "Podcast" }).click();
+    check(await page.locator(".project-card").count() === 4, "Podcast filter shows four edits");
+    const everything = await page.evaluate(() => document.documentElement.innerText + document.head.innerHTML);
+    check(!/remake|breaking bad/i.test(everything), "no mention of the remake anywhere on the page, meta tags included");
+    check(!/remake|breaking bad/i.test(await page.evaluate(async () => (await (await fetch("/terms")).text()))), "none on the terms page either");
+    check(problems.length === 0, "films: no console/network errors", problems.join(" | "));
+    await context.close();
+  }
+
+  console.log("\n▸ Currency switch — S$ and AED");
+  {
+    const norm = (s) => s.replace(/\s+/g, " ").trim();
+    const plans = async (page) => norm((await page.locator("#pricing .plan-amount").allTextContents()).slice(0, 3).join(" "));
+    const perReel = async (page) => (await page.locator("#pricing .plan-per").allTextContents()).slice(0, 3).map(norm).join("|");
+    const noTokens = async (page) => {
+      const bad = [];
+      for (const [, label] of PRICING_VIEWS) {
+        await page.locator("#pricing-tabs .filter-chip", { hasText: label }).click();
+        const text = await page.locator("#pricing").evaluate((n) => n.textContent);
+        if (/\{(inr|usd|usda|fxnote)|NaN|undefined|Infinity/.test(text)) bad.push(label);
+      }
+      await page.locator("#pricing-tabs .filter-chip", { hasText: "Packages" }).click();
+      return bad;
+    };
+
+    fx.mode = "ok"; fx.hits = 0;
+    const { page, context, problems } = await newPage(browser, origin, { width: 1440, height: 900 }, false);
+    await page.goto(origin + "/", { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    const chips = (await page.locator("#currency-bar .currency-chip").allTextContents()).map(norm);
+    check(chips.join("|") === "₹ INR|S$ SGD|AED", "switch offers ₹ INR, S$ SGD and AED", chips.join("|"));
+    check(await page.locator('#currency-bar .currency-chip[aria-pressed="true"]').innerText() === "₹ INR", "rupees are the default");
+    check(fx.hits === 0, "no rate request is made until someone picks another currency");
+    check(await plans(page) === "₹10,000 ₹19,500 ₹35,000" && (await page.locator("#currency-note").isHidden()), "rupee view is unchanged and shows no rate line");
+    const rupeeFaq = await page.locator("#pricing").evaluate((n) => n.textContent);
+    check(/assumed ₹88/.test(rupeeFaq) && /\$495 \(about ₹43,560\)/.test(rupeeFaq), "rupee view keeps the dollar prices with their rupee gloss");
+
+    await page.locator('#currency-bar [data-currency="SGD"]').click();
+    await page.waitForFunction(() => /4 Nov 2026/.test(document.getElementById("currency-note").textContent), null, { timeout: 5000 }).catch(() => {});
+    check(fx.hits === 1, "picking S$ fetches live rates once", String(fx.hits));
+    check(await plans(page) === "S$140 S$275 S$490", "plans convert to S$140 / S$275 / S$490", await plans(page));
+    check(await perReel(page) === "S$18 per reel|S$17 per reel|S$16 per reel", "per-reel prices convert", await perReel(page));
+    check(norm(await page.locator("#pricing .plan-billed").first().innerText()) === "Billed as ₹10,000", "each plan still says what it is billed in");
+    const note = norm(await page.locator("#currency-note").innerText());
+    check(/Rate of 4 Nov 2026: S\$1 = ₹71\.43/.test(note) && /Billing stays in rupees/.test(note) && !/could not be loaded/.test(note), "rate line names the live rate, its date and rupee billing", note);
+    const trial = norm(await page.locator("#pricing-packages .trial-card").innerText());
+    check(/3 reels at S\$11 each, S\$33 in all/.test(trial) && /S\$16\.50/.test(trial), "trial card stays arithmetically consistent in S$", trial.slice(0, 160));
+    check(await page.locator('#currency-bar [data-currency="SGD"]').getAttribute("aria-pressed") === "true", "active currency is marked pressed");
+    const packages = norm(await page.locator("#pricing-packages").innerText());
+    check(/3 reels for S\$33, S\$16\.50 to start/.test(packages) && /Start your trial: S\$16\.50 down/.test(packages), "trial figures agree across the card, the terms list and the button", packages.slice(-200));
+
+    await page.locator("#pricing-tabs .filter-chip", { hasText: "vs Other Companies" }).click();
+    const vs = norm(await page.locator("#pricing-vs").innerText());
+    check(/S\$635/.test(vs) && !/\$495/.test(vs.replace(/S\$/g, "")), "competitor dollar prices convert straight from USD ($495 → S$635)");
+    check(!/assumed ₹88/.test(vs), "the 'assumed ₹88' note is gone once converted");
+    check((await noTokens(page)).length === 0, "S$: no raw {tokens}, NaN or undefined in any view");
+    await page.locator("#pricing-tabs .filter-chip", { hasText: "All options" }).click();
+    const axis = norm(await page.locator("#pricing-options .cost-axis").innerText());
+    check(/S\$/.test(axis) && !/₹/.test(axis), "chart axis is labelled in S$", axis);
+    check(/S\$/.test(await page.locator("#pricing-options .cost-chart").getAttribute("aria-label")), "chart's spoken description is converted too");
+    await page.locator("#pricing-tabs .filter-chip", { hasText: "Packages" }).click();
+
+    await page.locator('#currency-bar [data-currency="AED"]').click();
+    check(await plans(page) === "AED 400 AED 785 AED 1,410", "AED plans: 400 / 785 / 1,410", await plans(page));
+    check(/AED\s1 = ₹24\.87/.test(norm(await page.locator("#currency-note").innerText())), "AED rate line: AED 1 = ₹24.87", norm(await page.locator("#currency-note").innerText()));
+    check(fx.hits === 1, "switching currencies reuses the loaded rates", String(fx.hits));
+    check((await noTokens(page)).length === 0, "AED: no raw {tokens}, NaN or undefined in any view");
+
+    await page.reload({ waitUntil: "load" });
+    check(await page.locator('#currency-bar [data-currency="AED"]').getAttribute("aria-pressed") === "true" && (await plans(page)) === "AED 400 AED 785 AED 1,410", "the choice is remembered after a reload");
+    check(fx.hits === 1, "reload uses the cached rates instead of fetching again", String(fx.hits));
+
+    await page.locator('#currency-bar [data-currency="INR"]').click();
+    check(await plans(page) === "₹10,000 ₹19,500 ₹35,000" && (await page.locator("#currency-note").isHidden()), "back to rupees restores the original prices");
+    check((await page.evaluate(() => localStorage.getItem("kk-currency"))) === null, "choosing rupees clears the saved choice");
+    check(problems.length === 0, "currency: no console/network errors", problems.join(" | "));
+    await context.close();
+
+    // the rate service is down → saved rates, labelled as such
+    fx.mode = "fail"; fx.hits = 0;
+    {
+      const { page: p, context: c, problems: pr } = await newPage(browser, origin, { width: 1440, height: 900 }, false);
+      await p.goto(origin + "/", { waitUntil: "load" });
+      await p.locator('#currency-bar [data-currency="SGD"]').click();
+      await p.waitForFunction(() => /could not be loaded/.test(document.getElementById("currency-note").textContent), null, { timeout: 8000 }).catch(() => {});
+      const n = norm(await p.locator("#currency-note").innerText());
+      check(await plans(p) === "S$135 S$265 S$470", "service down: saved rates convert the plans", await plans(p));
+      check(/Rate of 3 Nov 2026/.test(n) && /Live rates could not be loaded/.test(n), "service down: the line says it is a saved rate, with its date", n);
+      check(pr.filter((e) => !/frankfurter/.test(e)).length === 0, "service down: no page errors", pr.join(" | "));
+      await c.close();
+    }
+    // nonsense from the service is refused
+    fx.mode = "bad"; fx.hits = 0;
+    {
+      const { page: p, context: c } = await newPage(browser, origin, { width: 1440, height: 900 }, false);
+      await p.goto(origin + "/", { waitUntil: "load" });
+      await p.locator('#currency-bar [data-currency="SGD"]').click();
+      await p.waitForFunction(() => /could not be loaded/.test(document.getElementById("currency-note").textContent), null, { timeout: 8000 }).catch(() => {});
+      check(await plans(p) === "S$135 S$265 S$470", "implausible rates from the service are ignored", await plans(p));
+      await c.close();
+    }
+    fx.mode = "ok";
+  }
+  for (const vp of VIEWPORTS) {
+    const { page, context } = await newPage(browser, origin, vp, false);
+    await page.addInitScript(() => { try { localStorage.setItem("kk-currency", "AED"); } catch (e) {} });
+    await page.goto(origin + "/", { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    const bar = await page.locator("#currency-bar").boundingBox();
+    check(bar && bar.x >= 0 && bar.x + bar.width <= vp.width + 1, `${vp.name}: currency switch fits the screen`);
+    for (const [, label] of PRICING_VIEWS) {
+      await page.locator("#pricing-tabs .filter-chip", { hasText: label }).click();
+      await layoutChecks(page, `${vp.name} pricing in AED "${label}"`);
+    }
+    if (vp.name === "phone-390" || vp.name === "desktop-1440") {
+      await page.locator("#pricing-tabs .filter-chip", { hasText: "Packages" }).click();
+      await page.locator("#pricing").scrollIntoViewIfNeeded();
+      await page.locator("#pricing").screenshot({ path: path.join(SHOTS, `pricing-aed-${vp.name}.png`) });
     }
     await context.close();
   }

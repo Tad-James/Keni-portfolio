@@ -10,19 +10,20 @@
   var data = (window.KENISHA_PORTFOLIO || {}).pricing;
   var section = document.getElementById("pricing");
   var navLink = document.querySelector('.main-nav a[href="#pricing"]');
-  var moneyFormat = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+  var Currency = window.KKCurrency;
 
   /* ── tiny helpers (same shape as app.js) ──────────────────────────── */
+  // Text passes through Currency.expand, so {inr:1200}-style amounts follow the chosen currency.
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
+    if (text !== undefined) node.textContent = Currency.expand(text);
     return node;
   }
   function clean(value) { return typeof value === "string" ? value.trim() : ""; }
   function pad(n) { return String(n).padStart(2, "0"); }
   function percent(value, max) { return (value / max * 100) + "%"; }
-  function formatMoney(amount) { return "₹" + moneyFormat.format(Math.round(amount)); }
+  function formatMoney(amount) { return Currency.money(amount); }
   function safeHttps(value) {
     try {
       var url = new URL(clean(value));
@@ -54,6 +55,7 @@
     }
     head.appendChild(price);
     head.appendChild(el("p", "plan-per", plan.custom ? clean(plan.perNote) : formatMoney(plan.price / plan.reels) + " per reel"));
+    if (!plan.custom && !Currency.isInr()) head.appendChild(el("p", "plan-billed", "Billed as ₹" + Math.round(plan.price).toLocaleString("en-IN")));
     return head;
   }
 
@@ -92,10 +94,10 @@
   /* ── paid trial card ──────────────────────────────────────────────── */
   // Fills {price} {reels} {total} {deposit} {balance} from the trial's own numbers.
   function trialText(trial, text) {
-    var total = trial.reels * trial.price;
+    var figures = Currency.trialFigures(trial);
     var values = {
-      price: formatMoney(trial.price), reels: String(trial.reels), total: formatMoney(total),
-      deposit: formatMoney(trial.deposit), balance: formatMoney(total - trial.deposit)
+      price: figures.price, reels: String(trial.reels), total: figures.total,
+      deposit: figures.deposit, balance: figures.balance
     };
     return clean(text).replace(/\{(\w+)\}/g, function (match, key) {
       return values.hasOwnProperty(key) ? values[key] : match;
@@ -174,9 +176,9 @@
   function fillCell(cell, value) {
     var plan = value && typeof value === "object"
       ? data.plans.filter(function (p) { return p.name === value.plan; })[0] : null;
-    if (!plan) { cell.textContent = typeof value === "string" ? value : ""; return; }
+    if (!plan) { cell.textContent = typeof value === "string" ? Currency.expand(value) : ""; return; }
     cell.appendChild(el("strong", "cell-price", formatMoney(plan.price)));
-    cell.appendChild(document.createTextNode(" " + value.text));
+    cell.appendChild(document.createTextNode(" " + Currency.expand(value.text)));
   }
 
   function tableHead(columns, subs) {
@@ -234,7 +236,7 @@
       line.appendChild(externalLink(s.label, s.url));
       line.appendChild(document.createTextNode(i < links.length - 1 ? ", " : ". "));
     });
-    line.appendChild(document.createTextNode(clean(note)));
+    line.appendChild(document.createTextNode(Currency.expand(clean(note))));
     return line;
   }
 
@@ -338,7 +340,7 @@
   function chartAxis(max, step) {
     var axis = el("div", "cost-axis");
     for (var tick = 0; tick <= max; tick += step) {
-      var label = el("span", "", tick === 0 ? "0" : "₹" + (tick / 1000) + "k");
+      var label = el("span", "", Currency.axisLabel(tick));
       label.style.left = percent(tick, max);
       axis.appendChild(label);
     }
@@ -349,7 +351,7 @@
     var wrap = el("div", "cost-chart");
     wrap.setAttribute("role", "img");
     wrap.setAttribute("aria-label", "Monthly cost range for each option: " +
-      chart.rows.map(function (r) { return r.name + ", " + r.label; }).join("; "));
+      chart.rows.map(function (r) { return r.name + ", " + Currency.expand(r.label); }).join("; "));
     chart.rows.forEach(function (row) { wrap.appendChild(chartRow(row, chart.max, chart.step)); });
     wrap.appendChild(chartAxis(chart.max, chart.step));
     return wrap;
@@ -392,25 +394,72 @@
     });
   }
 
+  /* ── currency switch ──────────────────────────────────────────────── */
+  var currencyChips = [];
+  var currencyNote = null;
+
+  function setupCurrency() {
+    var bar = document.getElementById("currency-bar");
+    currencyNote = document.getElementById("currency-note");
+    if (!bar || Currency.codes.length < 2) return;
+    bar.hidden = false;
+    bar.appendChild(el("span", "filter-label", "PRICES IN"));
+    Currency.codes.forEach(function (code) {
+      var chip = el("button", "filter-chip currency-chip", Currency.meta[code].label);
+      chip.type = "button";
+      chip.dataset.currency = code;
+      chip.setAttribute("aria-label", "Show prices in " + Currency.meta[code].name);
+      chip.addEventListener("click", function () { Currency.use(code); });
+      bar.appendChild(chip);
+      currencyChips.push(chip);
+    });
+  }
+
+  function syncCurrency() {
+    var active = Currency.code();
+    currencyChips.forEach(function (chip) {
+      var on = chip.dataset.currency === active;
+      chip.classList.toggle("is-active", on);
+      chip.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    if (currencyNote) {
+      var line = Currency.rateLine();
+      currencyNote.textContent = line;
+      currencyNote.hidden = !line;
+    }
+  }
+
   /* ── boot ─────────────────────────────────────────────────────────── */
+  var panels = {};
+
+  // Builds every panel from the content. Runs again when the currency changes.
+  function render() {
+    var open = Array.prototype.map.call(document.querySelectorAll("#pricing details"), function (d) { return d.open; });
+    ["pricing-packages", "pricing-vs", "pricing-options"].forEach(function (id) { panels[id].replaceChildren(); });
+    var lede = clean(data.lede);
+    if (lede) document.getElementById("pricing-lede").textContent = Currency.expand(lede);
+    renderPackages(panels["pricing-packages"]);
+    vsIntro(panels["pricing-vs"], data.vs);
+    vsTables(panels["pricing-vs"], data.vs);
+    vsTail(panels["pricing-vs"], data.vs);
+    renderOptions(panels["pricing-options"]);
+    Array.prototype.forEach.call(document.querySelectorAll("#pricing details"), function (d, i) { d.open = !!open[i]; });
+    syncCurrency();
+  }
+
   function boot() {
     if (!section) return;
-    if (!data || !Array.isArray(data.plans) || !data.plans.length || !data.vs || !data.options) {
+    if (!Currency || !data || !Array.isArray(data.plans) || !data.plans.length || !data.vs || !data.options) {
       section.hidden = true;
       if (navLink) navLink.hidden = true;
       return;
     }
-    var lede = clean(data.lede);
-    if (lede) document.getElementById("pricing-lede").textContent = lede;
     document.getElementById("pricing-count").textContent = pad(data.plans.length);
-
-    var vsPanel = document.getElementById("pricing-vs");
-    renderPackages(document.getElementById("pricing-packages"));
-    vsIntro(vsPanel, data.vs);
-    vsTables(vsPanel, data.vs);
-    vsTail(vsPanel, data.vs);
-    renderOptions(document.getElementById("pricing-options"));
+    ["pricing-packages", "pricing-vs", "pricing-options"].forEach(function (id) { panels[id] = document.getElementById(id); });
+    setupCurrency();
     setupViews();
+    render();
+    Currency.onChange(render);
   }
 
   boot();

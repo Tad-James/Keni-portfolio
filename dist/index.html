@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fcfaf6">
 <title>Kenisha Khatri — Video Editor</title>
-<meta name="description" content="Video editing portfolio of Kenisha Khatri: podcast edits in Hindi, English and Tamil, a Breaking Bad intro remake and a multilingual voice-agent product demo.">
+<meta name="description" content="Video editing portfolio of Kenisha Khatri: podcast edits in Hindi, English and Tamil, real estate reels and a multilingual voice-agent product demo.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Kenisha Khatri — Video Editor">
-<meta property="og:description" content="Podcast edits in Hindi, English and Tamil, a Breaking Bad intro remake and a multilingual voice-agent product demo.">
+<meta property="og:description" content="Podcast edits in Hindi, English and Tamil, real estate reels and a multilingual voice-agent product demo.">
 <meta property="og:image" content="/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="/styles.css">
 <script src="/site-content.js" defer></script>
 <script src="/app.js" defer></script>
+<script src="/currency.js" defer></script>
 <script src="/pricing.js" defer></script>
 </head>
 <body>
@@ -35,8 +36,8 @@
     <div class="hero-copy">
       <div class="eyebrow"><span class="eyebrow-number">01 / 04</span><span>VIDEO EDITOR · PORTFOLIO</span></div>
       <h1 id="hero-title">Kenisha<br><span>Khatri</span><i>.</i></h1>
-      <div class="hero-role-line"><p class="hero-role">Video Editor</p><span class="role-rule"></span><p class="hero-location" id="hero-location">Podcasts · Remakes<br>Product films</p></div>
-      <p class="hero-intro" id="hero-intro">Podcast edits in Hindi, English and Tamil, a Breaking Bad intro remake, and a multilingual voice-agent product demo.</p>
+      <div class="hero-role-line"><p class="hero-role">Video Editor</p><span class="role-rule"></span><p class="hero-location" id="hero-location">Podcasts · Real estate<br>Product films</p></div>
+      <p class="hero-intro" id="hero-intro">Podcast edits in Hindi, English and Tamil, real estate reels, and a multilingual voice-agent product demo.</p>
       <div class="hero-actions"><button class="button button-primary" type="button" data-open-reel><span class="button-play" aria-hidden="true">▶</span>Watch intro<span class="button-arrow" aria-hidden="true">↗</span></button><a class="button button-quiet" href="#work">Explore selected work <span aria-hidden="true">↓</span></a></div>
       <div class="hero-foot" id="hero-foot"><span><b>EDITS IN</b> Hindi · English · Tamil</span></div>
     </div>
@@ -53,7 +54,7 @@
   <div class="ticker" aria-hidden="true"><div class="ticker-track"><span>EDIT WITH INTENT</span><i>✳</i><span>FIND THE RHYTHM</span><i>✳</i><span>MAKE THE FRAME COUNT</span><i>✳</i><span>EDIT WITH INTENT</span><i>✳</i><span>FIND THE RHYTHM</span><i>✳</i><span>MAKE THE FRAME COUNT</span><i>✳</i></div></div>
   <section class="work-section page-wrap" id="work" aria-labelledby="work-title">
     <div class="section-topline"><span>02 / SELECTED WORK</span><span>THE PORTFOLIO INDEX <i aria-hidden="true">↘</i></span></div>
-    <div class="work-heading"><div><h2 id="work-title">The work<span class="lime-dot">.</span></h2><p class="section-lede">Podcast edits in three languages, a title-sequence remake and a product demo. Every film plays right here.</p></div><div class="work-count"><span class="count-number" id="project-count">05</span><span>FILMS</span></div></div>
+    <div class="work-heading"><div><h2 id="work-title">The work<span class="lime-dot">.</span></h2><p class="section-lede">Podcast edits in three languages, real estate reels and a product demo. Every film plays right here.</p></div><div class="work-count"><span class="count-number" id="project-count">06</span><span>FILMS</span></div></div>
     <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter projects by type"><span class="filter-label">FILTER</span></div>
     <div class="project-grid" id="project-grid" aria-live="polite"></div>
     <div class="work-bottom"><span><i class="bottom-mark"></i> TAP ANY FILM TO PLAY</span><a href="#contact">Have a project in mind? <span aria-hidden="true">↗</span></a></div>
@@ -62,7 +63,9 @@
     <div class="section-topline"><span>03 / PRICING</span><span>MONTHLY REEL PACKAGES <i aria-hidden="true">↘</i></span></div>
     <div class="work-heading"><div><h2 id="pricing-title">Pricing<span class="lime-dot">.</span></h2><p class="section-lede" id="pricing-lede">Monthly reel packages on a fixed price in rupees.</p></div><div class="work-count"><span class="count-number" id="pricing-count">04</span><span>PLANS</span></div></div>
     <div class="filter-bar" id="pricing-tabs" role="group" aria-label="Pricing views"><span class="filter-label">VIEW</span></div>
-    <div class="pricing-panel" id="pricing-packages" aria-live="polite"></div>
+    <div class="currency-bar filter-bar" id="currency-bar" role="group" aria-label="Price currency" hidden></div>
+    <p class="pricing-note currency-note" id="currency-note" role="status" hidden></p>
+    <div class="pricing-panel" id="pricing-packages"></div>
     <div class="pricing-panel" id="pricing-vs" hidden></div>
     <div class="pricing-panel" id="pricing-options" hidden></div>
     <div class="work-bottom"><span><i class="bottom-mark"></i> PRICES IN RUPEES · 50% TO START, 50% ON DELIVERY · <a href="/terms">TERMS</a></span><a href="#contact">Not sure which plan? Let’s talk <span aria-hidden="true">↗</span></a></div>
