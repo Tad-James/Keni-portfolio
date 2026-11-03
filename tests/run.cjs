@@ -93,6 +93,7 @@ function mockContent(origin) {
   data.showreel.duration = "00:45";
   data.projects = data.projects.slice(0, 5); // the tests below index these by position
   data.projects[3].category = "Real Estate";
+  data.projects[4].category = "Product Demo";
   data.projects[0].video = IDS.p1;
   data.projects[0].duration = "42:10";
   data.projects[0].role = "Editor";
@@ -230,13 +231,16 @@ async function playsOk(page) {
       "Podcast Edit — Hindi": "v7Ovrcx9G1tObKLcoSgpwSpnKpQDffOrrgAm6Xm01TcA",
       "Podcast Edit — English": "AHBS2k7pXjCrRjfmoGh3siio45fXI00qoo5OSUtK4D8g",
       "Podcast Edit — Tamil": "P400014GnSe3gS5ddHlzrMA014vhdq02kirasQZ402tJzqAw",
-      "Podcast Edit": "02uwHBJ78Oytkp2OwbwTHQfjNewsaHrXeXQizSZLojYI",
+      "Podcast Edit — 04": "02uwHBJ78Oytkp2OwbwTHQfjNewsaHrXeXQizSZLojYI",
+      "Podcast Edit — 05": "01hdReJEBBTolt5OEvd1hF02ClTWdtuC7l24aA3LpdINM",
+      "Podcast Edit — 06": "YV7oi148NcGXEyCAropLX1ADgiKKtB801f2jTk7IARpw",
+      "Podcast Edit — 07": "y015vPvUZ01300lCcUDV5z2BH3d02N9NXB3KHuhbabhMa34",
       "Multilingual Voice Agent — Product Demo": "3GS3G02yUyp8i01MX2mEa02UXbKZEqOv4rFGbzVTNGAcys",
       "Real Estate Reel": "qP1yezBreFFbvU1QvQNGwlySsfM01eT9r6mxF5rxceQQ"
     };
     const mapped = Object.fromEntries(shipped.projects.map((p) => [p.title, p.video]));
     check(Object.entries(expected).every(([t, id]) => mapped[t] === "mux:" + id), "each title maps to the right Mux playback ID");
-    check(shipped.projects.length === 6 && shipped.projects.every((p) => p.orientation === "portrait"), "all six films are marked vertical (9:16)");
+    check(shipped.projects.length === 9 && shipped.projects.every((p) => p.orientation === "portrait"), "all nine films are marked vertical (9:16)");
     check(!shipped.projects.some((p) => /remake|breaking bad/i.test(p.title + p.category + p.note)), "the Breaking Bad remake is gone from the films");
     check(shipped.projects.every((p) => p.video), "every shipped film has a video (no 'coming soon' cards in production)");
     {
@@ -275,7 +279,7 @@ async function playsOk(page) {
       await context.close();
     }
 
-    for (const [name, width, height, cols] of [["desktop", 1440, 900, 6], ["tablet", 768, 1024, 3], ["phone", 390, 844, 2]]) {
+    for (const [name, width, height, cols] of [["desktop", 1440, 900, 5], ["tablet", 768, 1024, 3], ["phone", 390, 844, 2]]) {
       const { page, context } = await newPage(browser, origin, { width, height }, false);
       await page.goto(origin + "/", { waitUntil: "load" });
       await page.locator(".project-card img").first().waitFor();
@@ -452,11 +456,11 @@ async function playsOk(page) {
     await page.goto(origin + "/", { waitUntil: "load" });
     const chips = (await page.locator("#filter-bar .filter-chip").allTextContents()).map((c) => c.replace(/\d+$/, "").trim());
     check(chips.join("|") === "All work|Podcast|Product Demo|Real Estate", "filter chips are All, Podcast, Product Demo, Real Estate", chips.join("|"));
-    check(await page.locator(".project-card").count() === 6 && (await page.locator("#project-count").innerText()) === "06", "six films, counter says 06");
+    check(await page.locator(".project-card").count() === 9 && (await page.locator("#project-count").innerText()) === "09", "nine films, counter says 09");
     await page.locator("#filter-bar .filter-chip", { hasText: "Real Estate" }).click();
     check(await page.locator(".project-card").count() === 1, "Real Estate filter shows its reel");
     await page.locator("#filter-bar .filter-chip", { hasText: "Podcast" }).click();
-    check(await page.locator(".project-card").count() === 4, "Podcast filter shows four edits");
+    check(await page.locator(".project-card").count() === 7, "Podcast filter shows seven edits");
     const everything = await page.evaluate(() => document.documentElement.innerText + document.head.innerHTML);
     check(!/remake|breaking bad/i.test(everything), "no mention of the remake anywhere on the page, meta tags included");
     check(!/remake|breaking bad/i.test(await page.evaluate(async () => (await (await fetch("/terms")).text()))), "none on the terms page either");
