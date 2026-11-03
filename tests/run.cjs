@@ -236,11 +236,12 @@ async function playsOk(page) {
       "Podcast Edit — 06": "YV7oi148NcGXEyCAropLX1ADgiKKtB801f2jTk7IARpw",
       "Podcast Edit — 07": "y015vPvUZ01300lCcUDV5z2BH3d02N9NXB3KHuhbabhMa34",
       "Multilingual Voice Agent — Product Demo": "3GS3G02yUyp8i01MX2mEa02UXbKZEqOv4rFGbzVTNGAcys",
-      "Real Estate Reel": "qP1yezBreFFbvU1QvQNGwlySsfM01eT9r6mxF5rxceQQ"
+      "Real Estate Reel — 01": "qP1yezBreFFbvU1QvQNGwlySsfM01eT9r6mxF5rxceQQ",
+      "Real Estate Reel — 02": "AN3TPay00WS01yrCiwGO8Pg2DWM1002Bch5kP3q00gN02Dag"
     };
     const mapped = Object.fromEntries(shipped.projects.map((p) => [p.title, p.video]));
     check(Object.entries(expected).every(([t, id]) => mapped[t] === "mux:" + id), "each title maps to the right Mux playback ID");
-    check(shipped.projects.length === 9 && shipped.projects.every((p) => p.orientation === "portrait"), "all nine films are marked vertical (9:16)");
+    check(shipped.projects.length === 10 && shipped.projects.every((p) => p.orientation === "portrait"), "all ten films are marked vertical (9:16)");
     check(!shipped.projects.some((p) => /remake|breaking bad/i.test(p.title + p.category + p.note)), "the Breaking Bad remake is gone from the films");
     check(shipped.projects.every((p) => p.video), "every shipped film has a video (no 'coming soon' cards in production)");
     {
@@ -456,9 +457,9 @@ async function playsOk(page) {
     await page.goto(origin + "/", { waitUntil: "load" });
     const chips = (await page.locator("#filter-bar .filter-chip").allTextContents()).map((c) => c.replace(/\d+$/, "").trim());
     check(chips.join("|") === "All work|Podcast|Product Demo|Real Estate", "filter chips are All, Podcast, Product Demo, Real Estate", chips.join("|"));
-    check(await page.locator(".project-card").count() === 9 && (await page.locator("#project-count").innerText()) === "09", "nine films, counter says 09");
+    check(await page.locator(".project-card").count() === 10 && (await page.locator("#project-count").innerText()) === "10", "ten films, counter says 10");
     await page.locator("#filter-bar .filter-chip", { hasText: "Real Estate" }).click();
-    check(await page.locator(".project-card").count() === 1, "Real Estate filter shows its reel");
+    check(await page.locator(".project-card").count() === 2, "Real Estate filter shows its two reels");
     await page.locator("#filter-bar .filter-chip", { hasText: "Podcast" }).click();
     check(await page.locator(".project-card").count() === 7, "Podcast filter shows seven edits");
     const everything = await page.evaluate(() => document.documentElement.innerText + document.head.innerHTML);
